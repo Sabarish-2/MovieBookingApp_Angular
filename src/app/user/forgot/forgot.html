@@ -1,0 +1,47 @@
+<form [formGroup]="forgotForm" (ngSubmit)="submit()" novalidate>
+    <div class="mb-3">
+        <label class="form-label">Login ID or Email</label>
+        <input class="form-control" formControlName="loginOrEmail" />
+        @if ((f.loginOrEmail.touched || submitted) && f.loginOrEmail.invalid) {
+        <div class="text-danger small">This field is required.</div>
+        }
+    </div>
+
+    @if (forgotForm.get('loginOrEmail')?.value?.includes('@')) {
+    <div class="mb-3">
+        <label class="form-label">Code</label>
+        <input class="form-control" formControlName="code" />
+        @if ((f.code.touched || submitted) && f.code.invalid) {
+        <div class="text-danger small">Code is required.</div>
+        }
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">New Password</label>
+        <input type="password" class="form-control" formControlName="newPassword" />
+        @if ((f.newPassword.touched || submitted) && f.newPassword.errors) {
+        @if (f.newPassword.errors['required']) {
+        <div class="text-danger small">New password is required.</div>
+        }
+        @if (f.newPassword.errors['weakPassword']) {
+        <div class="text-danger small">Password must be at least 8 chars, include number, lower, upper and special char.
+        </div>
+        }
+        }
+        @if (auth.findUser(forgotForm.get('loginOrEmail')?.value || '') &&
+        auth.findUser(forgotForm.get('loginOrEmail')?.value || '')?.password === f.newPassword.value) {
+        <div class="text-danger small">New password must not match the old password.</div>
+        }
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Confirm New Password</label>
+        <input type="password" class="form-control" formControlName="confirmNewPassword" />
+        @if ((f.confirmNewPassword.touched || submitted) && forgotForm.errors?.['newPasswordMismatch']) {
+        <div class="text-danger small">New passwords do not match.</div>
+        }
+    </div>
+    }
+
+    <button class="btn btn-primary" type="submit">Submit</button>
+</form>

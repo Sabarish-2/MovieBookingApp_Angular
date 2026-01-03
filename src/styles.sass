@@ -1,1 +1,41 @@
 /* You can add global styles to this file, and also import other style files */
+@import "bootstrap/dist/css/bootstrap.min.css"
+
+// App base styles
+body
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)
+    color: #0f172a
+    min-height: 100vh
+    margin: 0
+    padding: 2rem
+
+app-root
+    display: block
+    max-width: 1200px
+    margin: 0 auto
+
+.app-header
+    text-align: center
+    margin-bottom: 1.5rem
+
+.page-title
+    font-size: 1.5rem
+    font-weight: 700
+    color: #0f172a
+
+// Utility to centrally layout movie cards grid
+.movies-grid
+    display: grid
+    // fixed column base so cards in each row have uniform width; columns grow to fill available space
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr))
+    gap: 1rem
+    /* Let each grid row size to the tallest item so rows grow when a card becomes taller */
+    grid-auto-rows: auto
+    align-items: stretch
+    justify-items: stretch
+
+    // Ensure grid children can shrink and won't force columns wider than intended
+    & > *
+        min-width: 0
+        box-sizing: border-box

@@ -1,0 +1,65 @@
+<form [formGroup]="registerForm" (ngSubmit)="submit()" novalidate>
+    <div class="mb-3">
+        <label class="form-label">First Name</label>
+        <input class="form-control" formControlName="firstName" />
+        @if ((f.firstName.touched || submitted) && f.firstName.invalid) {
+        <div class="text-danger small">First name is required.</div>
+        }
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Last Name</label>
+        <input class="form-control" formControlName="lastName" />
+        @if ((f.lastName.touched || submitted) && f.lastName.invalid) {
+        <div class="text-danger small">Last name is required.</div>
+        }
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Login ID</label>
+        <input class="form-control" formControlName="loginID" />
+        @if ((f.loginID.touched || submitted) && f.loginID.invalid) {
+        <div class="text-danger small">Login ID is required.</div>
+        }
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-control" formControlName="emailID" />
+        @if ((f.emailID.touched || submitted) && f.emailID.invalid) {
+        <div class="text-danger small">Enter a valid email.</div>
+        }
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-control" formControlName="password" />
+        @if ((f.password.touched || submitted) && f.password.errors) {
+        @if (f.password.errors['required']) {
+        <div class="text-danger small">Password is required.</div>
+        }
+        @if (f.password.errors['weakPassword']) {
+        <div class="text-danger small">Password must be at least 8 chars, include number, lower, upper and special char.
+        </div>
+        }
+        }
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Confirm Password</label>
+        <input type="password" class="form-control" formControlName="confirmPassword" />
+        @if ((submitted || f.confirmPassword.touched) && registerForm.errors?.['passwordsMismatch']) {
+        <div class="text-danger small">Passwords do not match.</div>
+        }
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Contact Number</label>
+        <input class="form-control" formControlName="contactNumber" />
+        @if ((f.contactNumber.touched || submitted) && f.contactNumber.invalid) {
+        <div class="text-danger small">Enter a valid contact number (digits only).</div>
+        }
+    </div>
+
+    <button class="btn btn-primary" type="submit">Register</button>
+</form>

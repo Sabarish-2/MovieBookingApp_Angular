@@ -1,0 +1,74 @@
+.movie-card
+    border-radius: 12px
+    min-width: 15rem
+    max-width: 100%
+    position: relative
+    overflow: visible
+    transition: transform 0.5s ease
+
+    &:not(.sold-out):hover
+        transform: scale(1.03)
+        transform-origin: center center
+
+    .header
+        padding: 8vh
+        text-align: center
+        /* default header gradient (fallback) */
+        background: var(--gradient, linear-gradient(180deg, #2c26a7ff 0%, #e97791ff 100%))
+        /* round the header top corners to match the card */
+        border-top-left-radius: 12px
+        border-top-right-radius: 12px
+        overflow: hidden
+
+        h3
+            margin: 0
+            font-weight: 650
+            white-space: normal
+    .badge
+        position: absolute
+        top: -1rem
+        right: 12px
+        z-index: 50
+        padding: 6px 10px
+
+    .body
+        padding: 14px
+
+        .theatre
+            font-size: 14px
+            color: #475569
+            margin-bottom: 10px
+
+        // make the card fill the grid cell and layout its content vertically
+        // so the button can sit at the bottom and all cards in the row match height
+        display: flex
+        flex-direction: column
+
+        .tickets-info
+            margin-top: 8px
+
+            .small
+                color: #64748b
+
+            .mb-1
+                margin-bottom: .25rem
+
+            // progress bar custom gradient
+            .progress-fill
+                background: linear-gradient(90deg, #6d28d9, #4f46e5)
+                transition: width .45s ease
+
+        .btn
+            transition: transform .12s ease, box-shadow .12s ease
+
+            &:not(:disabled):hover
+                transform: scale(1.05)
+
+//        .btn
+//            margin-top: auto
+
+@media (max-width: 480px)
+    .movie-card
+        max-width: 100%
+
+

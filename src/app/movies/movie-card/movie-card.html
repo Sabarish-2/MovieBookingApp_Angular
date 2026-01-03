@@ -1,0 +1,37 @@
+<div class="card movie-card" [class.sold-out]="movie.movieStatus === 'SOLD_OUT'">
+    <span class="text-black border border-dark badge position-absolute"
+        [class.bg-success]="movie.movieStatus === 'AVAILABLE'" [class.bg-danger]="movie.movieStatus === 'SOLD_OUT'"
+        [class.bg-warning]="movie.movieStatus === 'BOOK_ASAP'">
+        {{ movie.movieStatus.replace('_', ' ') }}
+    </span>
+
+    <div class="card-header header text-white">
+        <h3 class="h5 mb-0">{{ movie.movieName }}</h3>
+    </div>
+
+    <div class="card-body body">
+        <p class="theatre fw-bold">📍 {{ movie.theatreName }}</p>
+
+        <div class="tickets-info">
+            <div class="d-flex justify-content-between small mb-1">
+                <span>Available</span>
+                <span>{{ movie.ticketsAvailable }} / {{ movie.ticketsAllotted }}</span>
+            </div>
+
+            <div class="progress" style="height:8px;">
+                <div class="progress-bar progress-fill" role="progressbar"
+                    [style.width.%]="(movie.ticketsAvailable / movie.ticketsAllotted) * 100"
+                    aria-valuenow="{{movie.ticketsAvailable}}" aria-valuemin="0"
+                    aria-valuemax="{{movie.ticketsAllotted}}">
+                </div>
+            </div>
+        </div>
+
+        <button class="btn w-100 mt-3" 
+        [class.btn-primary]="movie.movieStatus !== 'SOLD_OUT'"    
+        [class.btn-secondary]="movie.movieStatus === 'SOLD_OUT'" 
+        [disabled]="movie.movieStatus === 'SOLD_OUT'">
+            {{ movie.movieStatus === 'AVAILABLE' ? 'Book Now!' : movie.movieStatus.replace('_', ' ') }}
+        </button>
+    </div>
+</div>

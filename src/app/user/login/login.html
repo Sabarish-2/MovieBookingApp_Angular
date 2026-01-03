@@ -1,0 +1,22 @@
+<form [formGroup]="loginForm" (ngSubmit)="submit()" novalidate>
+    <div class="mb-3">
+        <label class="form-label">Login ID or Email</label>
+        <input class="form-control" formControlName="loginOrEmail" />
+        @if ((f.loginOrEmail.touched || submitted) && f.loginOrEmail.invalid) {
+        <div class="text-danger small">Login ID or Email is required.</div>
+        }
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-control" formControlName="password" />
+        @if ((f.password.touched || submitted) && f.password.invalid) {
+        <div class="text-danger small">Password is required.</div>
+        }
+    </div>
+
+    @if (error) {
+    <div class="text-danger mb-2">{{ error }}</div>
+    }
+    <button class="btn btn-primary" type="submit">Login</button>
+</form>
