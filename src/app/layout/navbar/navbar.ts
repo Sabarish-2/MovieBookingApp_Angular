@@ -12,10 +12,12 @@ import { AuthService } from '../../services/auth.service';
 export class Navbar {
     isLoggedIn: boolean = false;
     userID : any = null;
+    isAdmin: boolean = false;
     
     constructor(private router: Router, private auth: AuthService) {
         this.userID = auth.userID;
         this.isLoggedIn = auth.isLoggedIn();
+        this.isAdmin = auth.isAdmin();
     }
 
     logout() {

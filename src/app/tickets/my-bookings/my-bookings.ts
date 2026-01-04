@@ -55,6 +55,7 @@ export class MyBookings implements OnInit {
                 } else {
                     this.errorMessage = error?.error?.message || 'Failed to load bookings. Please try again later.';
                 }
+                this.cdr.detectChanges();
             },
         });
     }

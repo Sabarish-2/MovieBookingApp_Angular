@@ -17,8 +17,8 @@ export class UserService {
     userLogin(user: LoginUser): Observable<String> {
         return this.http.post<String>(this.apiUrl + '/login', user, {responseType: 'text' as 'json'});
     }
-    userForgot(userID: string): Observable<User> {
-        return this.http.get<User>(this.apiUrl + '/' + userID + "/forgot");
+    userForgot(userID: string): Observable<LoginUser> {
+        return this.http.get<LoginUser>(this.apiUrl + '/' + userID + "/forgot");
     }
     userForgotCheck(userID: string, password: string): Observable<User> {
         return this.http.post<User>(this.apiUrl + '/' + userID + "/forgot", { token: 'sample', password : password});

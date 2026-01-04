@@ -1,15 +1,30 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
+import { Observable, take } from 'rxjs';
 
 function passwordStrength(control: AbstractControl): ValidationErrors | null {
     const pw = control.value as string;
     if (!pw) return { required: true };
-    const checks = [/.{8,}/, /[0-9]/, /[a-z]/, /[A-Z]/, /[^A-Za-z0-9]/];
-    const ok = checks.every((r) => r.test(pw));
-    return ok ? null : { weakPassword: true };
+
+    const checks = [
+        { regex: /.{8,}/, message: 'Password must be at least 8 characters long.' },
+        { regex: /[0-9]/, message: 'Password must include at least one number.' },
+        { regex: /[a-z]/, message: 'Password must include at least one lowercase letter.' },
+        { regex: /[A-Z]/, message: 'Password must include at least one uppercase letter.' },
+        { regex: /[^A-Za-z0-9]/, message: 'Password must include at least one special character.' },
+    ];
+
+    const errors = checks.reduce((acc, check) => {
+        if (!check.regex.test(pw)) {
+            acc[check.message] = true;
+        }
+        return acc;
+    }, {} as ValidationErrors);
+
+    return Object.keys(errors).length > 0 ? errors : null;
 }
 
 function confirmMatch(group: AbstractControl): ValidationErrors | null {
@@ -30,24 +45,37 @@ function confirmMatch(group: AbstractControl): ValidationErrors | null {
     styleUrl: './forgot.sass',
 })
 export class Forgot {
-    forgotForm;
+    forgotForm: FormGroup;
     submitted = false;
     stage: 'lookup' | 'reset' = 'lookup';
     isLoading = false;
     errorMessage = '';
     successMessage = '';
 
-    constructor(private fb: FormBuilder, private userService: UserService, private router: Router) {
+    constructor(private fb: FormBuilder, private userService: UserService, private router: Router, private cdr: ChangeDetectorRef) {
+        this.forgotForm = this.fb.group({});
+
         this.forgotForm = this.fb.group(
             {
                 userId: ['', Validators.required],
-                newPassword: [{ value: '', disabled: true }, [Validators.required, passwordStrength]],
+                newPassword: [
+                    { value: '', disabled: true },
+                    [Validators.required, passwordStrength],
+                ],
                 confirmNewPassword: [{ value: '', disabled: true }, [Validators.required]],
             },
             { validators: confirmMatch }
         );
+    }
 
-        this.disableResetControls();
+    private enableResetControls() {
+        this.forgotForm.get('newPassword')?.enable();
+        this.forgotForm.get('confirmNewPassword')?.enable();
+    }
+
+    private disableResetControls() {
+        this.forgotForm.get('newPassword')?.disable();
+        this.forgotForm.get('confirmNewPassword')?.disable();
     }
 
     get f() {
@@ -66,14 +94,15 @@ export class Forgot {
             }
 
             this.isLoading = true;
-            this.userService.userForgot(userControl.value).subscribe({
+            this.userService.userForgot(userControl.value).pipe(take(1)).subscribe({
                 next: () => {
                     this.isLoading = false;
                     this.stage = 'reset';
-                    this.successMessage = 'Verification successful. You can now set a new password.';
                     this.enableResetControls();
+                    this.successMessage = 'Verification successful. You can now set a new password.';
                 },
                 error: (error) => {
+                    console.error('User lookup failed:', error);
                     this.isLoading = false;
                     this.errorMessage = error?.error?.message || 'Unable to verify user. Please check the ID and try again.';
                 },
@@ -90,45 +119,33 @@ export class Forgot {
             }
 
             this.isLoading = true;
-            this.userService.userForgotCheck(userId, newPassword).subscribe({
-                next: () => {
-                    this.isLoading = false;
-                    this.successMessage = 'Password updated successfully. Redirecting to login...';
-                    setTimeout(() => this.router.navigate(['/login']), 2000);
-                },
-                error: (error) => {
-                    this.isLoading = false;
-                    this.errorMessage = error?.error?.message || 'Unable to reset password. Please try again.';
-                },
-            });
+            this.userService.userLogin({ loginID: userId, password: newPassword })
+                .subscribe({
+                    next: () => {
+                        this.isLoading = false;
+                        this.errorMessage = 'New password cannot be the same as the old password.';
+                        return;
+                    },
+                    error: () => {
+
+                        this.userService.userForgotCheck(userId, newPassword).subscribe({
+                            next: () => {
+                                this.isLoading = false;
+                                this.stage = 'lookup';
+                                this.disableResetControls();
+                                this.forgotForm.reset();
+                                this.submitted = false;
+                                this.successMessage = 'Password updated successfully. Redirecting to login...';
+                                setTimeout(() => this.router.navigate(['/login']), 2000);
+                            },
+                            error: (error) => {
+                                console.error('Password reset check failed:', error);
+                                this.isLoading = false;
+                                this.errorMessage = error?.error?.message || 'Unable to reset password. Please try again.';
+                            },
+                        });
+                    },
+                });
         }
-    }
-
-    restart() {
-        this.stage = 'lookup';
-        this.submitted = false;
-        this.errorMessage = '';
-        this.successMessage = '';
-        this.forgotForm.reset();
-        this.forgotForm.get('userId')?.enable();
-        this.disableResetControls();
-    }
-
-    private enableResetControls(): void {
-        this.forgotForm.get('newPassword')?.enable();
-        this.forgotForm.get('confirmNewPassword')?.enable();
-        this.forgotForm.get('newPassword')?.setValidators([Validators.required, passwordStrength]);
-        this.forgotForm.get('confirmNewPassword')?.setValidators([Validators.required]);
-        this.forgotForm.get('newPassword')?.updateValueAndValidity();
-        this.forgotForm.get('confirmNewPassword')?.updateValueAndValidity();
-    }
-
-    private disableResetControls(): void {
-        this.forgotForm.get('newPassword')?.disable();
-        this.forgotForm.get('confirmNewPassword')?.disable();
-        this.forgotForm.get('newPassword')?.clearValidators();
-        this.forgotForm.get('confirmNewPassword')?.clearValidators();
-        this.forgotForm.get('newPassword')?.updateValueAndValidity();
-        this.forgotForm.get('confirmNewPassword')?.updateValueAndValidity();
     }
 }

@@ -1,56 +1,66 @@
-<form [formGroup]="forgotForm" (ngSubmit)="submit()" novalidate class="forgot-form">
-    @if (errorMessage) {
-    <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
-    }
-
+<form [formGroup]="forgotForm" (ngSubmit)="submit()" novalidate class="forgot-form shadow-sm p-4 bg-light rounded">
     @if (successMessage) {
     <div class="alert alert-success" role="alert">{{ successMessage }}</div>
     }
 
     <div class="mb-3">
-        <label class="form-label">User ID</label>
-        <input class="form-control" formControlName="userId" [readonly]="stage === 'reset'" />
-        @if ((f.userId.touched || submitted) && f.userId.invalid) {
-        <div class="text-danger small">User ID is required.</div>
+        <label class="form-label">Login / ID</label>
+        <input class="form-control" formControlName="userId" [readonly]="stage === 'reset'"
+            placeholder="Enter your User ID" />
+        @if ((f['userId'].touched || submitted) && f['userId'].invalid) {
+        <div class="text-danger small mt-1">User ID is required.</div>
         }
     </div>
 
     @if (stage === 'reset') {
     <div class="mb-3">
         <label class="form-label">New Password</label>
-        <input type="password" class="form-control" formControlName="newPassword" />
-        @if ((f.newPassword.touched || submitted) && f.newPassword.errors) {
-        @if (f.newPassword.errors['required']) {
-        <div class="text-danger small">New password is required.</div>
+        <input type="password" class="form-control" formControlName="newPassword" placeholder="Enter new password" />
+        @if ((f['newPassword'].touched || submitted) && f['newPassword'].errors) {
+        @if (f['newPassword'].errors['required']) {
+        <div class="text-danger small mt-1">New password is required.</div>
         }
-        @if (f.newPassword.errors['weakPassword']) {
-        <div class="text-danger small">Password must be at least 8 characters and include a number, lowercase,
-            uppercase, and special character.</div>
+        @if (f['newPassword'].errors['Password must be at least 8 characters long.']) {
+        <div class="text-danger small mt-1">Add at least 8 characters.</div>
+        }
+        @if (f['newPassword'].errors['Password must include at least one number.']) {
+        <div class="text-danger small mt-1">Add a number.</div>
+        }
+        @if (f['newPassword'].errors['Password must include at least one lowercase letter.']) {
+        <div class="text-danger small mt-1">Add a lowercase letter.</div>
+        }
+        @if (f['newPassword'].errors['Password must include at least one uppercase letter.']) {
+        <div class="text-danger small mt-1">Add an uppercase letter.</div>
+        }
+        @if (f['newPassword'].errors['Password must include at least one special character.']) {
+        <div class="text-danger small mt-1">Add a special character.</div>
+        }
+        @if (f['newPassword'].errors['notSameAsOldPassword']) {
+        <div class="text-danger small mt-1">New password cannot be the same as the old password.</div>
         }
         }
     </div>
 
     <div class="mb-3">
         <label class="form-label">Confirm New Password</label>
-        <input type="password" class="form-control" formControlName="confirmNewPassword" />
-        @if ((f.confirmNewPassword.touched || submitted) && forgotForm.errors?.['newPasswordMismatch']) {
-        <div class="text-danger small">Passwords do not match.</div>
+        <input type="password" class="form-control" formControlName="confirmNewPassword"
+            placeholder="Confirm new password" />
+        @if ((f['confirmNewPassword'].touched || submitted) && forgotForm.errors?.['newPasswordMismatch']) {
+        <div class="text-danger small mt-1">Passwords do not match.</div>
         }
     </div>
     }
 
-    <div class="d-flex gap-2 align-items-center">
-        <button class="btn btn-primary" type="submit" [disabled]="isLoading">
+    <div class="d-flex gap-2 align-items-center mb-2">
+        <button class="btn btn-primary w-100" type="submit" [disabled]="isLoading">
             @if (isLoading) {
             <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
             }
-            {{ stage === 'lookup' ? 'Send Reset Request' : 'Update Password' }}
+            {{ stage === 'lookup' ? 'Verify User' : 'Update Password' }}
         </button>
-
-        @if (stage === 'reset') {
-        <button type="button" class="btn btn-outline-secondary" (click)="restart()" [disabled]="isLoading">
-            Start Over
-        </button>
-        }
     </div>
+    @if (errorMessage) {
+    <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+    }
+
 </form>
