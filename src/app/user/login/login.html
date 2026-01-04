@@ -1,22 +1,36 @@
-<form [formGroup]="loginForm" (ngSubmit)="submit()" novalidate>
+<form class="m-5 p-4 border rounded shadow-sm bg-light mx-auto" style="max-width: 500px;" [formGroup]="loginForm"
+    (ngSubmit)="submit()" novalidate>
+    <h2 class="text-center mb-4">Login</h2>
+
     <div class="mb-3">
-        <label class="form-label">Login ID or Email</label>
-        <input class="form-control" formControlName="loginOrEmail" />
-        @if ((f.loginOrEmail.touched || submitted) && f.loginOrEmail.invalid) {
-        <div class="text-danger small">Login ID or Email is required.</div>
+        <label class="form-label">Email ID / Login ID</label>
+        <input class="form-control" formControlName="loginID" placeholder="Enter your email or login ID" />
+        @if ((f.loginID.touched || submitted) && f.loginID.invalid) {
+        <div class="text-danger small mt-1">Email ID or Login ID is required.</div>
         }
     </div>
 
     <div class="mb-3">
         <label class="form-label">Password</label>
-        <input type="password" class="form-control" formControlName="password" />
+        <input type="password" class="form-control" formControlName="password" placeholder="Enter your password" />
         @if ((f.password.touched || submitted) && f.password.invalid) {
-        <div class="text-danger small">Password is required.</div>
+        <div class="text-danger small mt-1">Password is required.</div>
         }
     </div>
 
     @if (error) {
-    <div class="text-danger mb-2">{{ error }}</div>
+    <div class="text-danger mb-3 text-center">{{ error }}</div>
     }
-    <button class="btn btn-primary" type="submit">Login</button>
+
+    <div class="d-grid">
+        <button class="btn btn-primary" type="submit">Login</button>
+    </div>
+
+    <div class="text-center mt-3">
+        <a href="/forgot" class="text-decoration-none">Forgot Password?</a>
+    </div>
+
+    <div class="text-center mt-2">
+        <span>Don't have an account? </span><a href="/register" class="text-decoration-none">Register</a>
+    </div>
 </form>

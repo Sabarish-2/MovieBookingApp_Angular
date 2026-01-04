@@ -1,0 +1,54 @@
+<div class="my-bookings container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">My Bookings</h4>
+                    @if (isLoading) {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    }
+                </div>
+                <div class="card-body">
+                    @if (errorMessage) {
+                    <div class="alert alert-danger" role="alert">
+                        {{ errorMessage }}
+                    </div>
+                    } @else {
+                    @if (noBookings && !isLoading) {
+                    <div class="empty-state text-center py-5">
+                        <i class="fa fa-ticket fa-3x text-muted mb-3" aria-hidden="true"></i>
+                        <h5 class="text-muted">No bookings found</h5>
+                        <p class="text-muted">Start exploring movies and reserve your seats now.</p>
+                    </div>
+                    } @else {
+                    <div class="booking-list">
+                        @for (booking of bookings; track booking.ticketID) {
+                        <div class="booking-item border rounded-3 p-4 mb-3 shadow-sm">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                <div>
+                                    <h5 class="mb-1">{{ booking.movieName }}</h5>
+                                    <p class="mb-1 text-muted">{{ booking.theatreName }}</p>
+                                    <p class="mb-0">
+                                        <strong>Seats:</strong>
+                                        {{ booking.seatNumbers || (booking.numberOfSeats + ' seat(s)') }}
+                                    </p>
+                                </div>
+                                <span class="badge px-3 py-2 {{ getStatusBadgeClass(booking) }}">
+                                    {{ getStatusLabel(booking) }}
+                                </span>
+                            </div>
+                            @if (booking.bookedAt) {
+                            <p class="mb-0 mt-3 text-muted small">
+                                Booked on {{ booking.bookedAt | date: 'medium' }}
+                            </p>
+                            }
+                        </div>
+                        }
+                    </div>
+                    }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,37 @@
+.my-bookings
+    min-height: 100vh
+
+.card
+    border-radius: 16px
+
+    .card-header
+        border-radius: 16px 16px 0 0
+        padding: 1.75rem
+
+    .card-body
+        padding: 1.75rem
+
+.booking-list
+    .booking-item
+        background-color: #ffffff
+        transition: transform 0.2s ease, box-shadow 0.2s ease
+
+    &:hover
+        transform: translateY(-2px)
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08)
+
+.empty-state
+    i
+        opacity: 0.5
+
+@media (max-width: 768px)
+.my-bookings
+    padding-top: 2rem
+
+    .card
+    .card-body
+        padding: 1.25rem
+
+    .booking-list
+    .booking-item
+        padding: 1.5rem

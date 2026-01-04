@@ -1,9 +1,15 @@
 <div class="card movie-card" [class.sold-out]="movie.movieStatus === 'SOLD_OUT'">
+    @if (!isAdmin) {
     <span class="text-black border border-dark badge position-absolute"
         [class.bg-success]="movie.movieStatus === 'AVAILABLE'" [class.bg-danger]="movie.movieStatus === 'SOLD_OUT'"
         [class.bg-warning]="movie.movieStatus === 'BOOK_ASAP'">
         {{ movie.movieStatus.replace('_', ' ') }}
     </span>
+    } @else {
+    <button class="btn btn-danger btn-sm position-absolute top-0 end-0 me-2 mt-2" (click)="deleteMovie()">
+        <i class="fa fa-trash" aria-hidden="true"></i>
+    </button>
+    }
 
     <div class="card-header header text-white">
         <h3 class="h5 mb-0">{{ movie.movieName }}</h3>
@@ -12,6 +18,7 @@
     <div class="card-body body">
         <p class="theatre fw-bold">📍 {{ movie.theatreName }}</p>
 
+        @if (!isAdmin) {
         <div class="tickets-info">
             <div class="d-flex justify-content-between small mb-1">
                 <span>Available</span>
@@ -27,11 +34,40 @@
             </div>
         </div>
 
-        <button class="btn w-100 mt-3" 
-        [class.btn-primary]="movie.movieStatus !== 'SOLD_OUT'"    
-        [class.btn-secondary]="movie.movieStatus === 'SOLD_OUT'" 
-        [disabled]="movie.movieStatus === 'SOLD_OUT'">
+        <button class="btn w-100 mt-3" [class.btn-primary]="movie.movieStatus !== 'SOLD_OUT'"
+            [class.btn-secondary]="movie.movieStatus === 'SOLD_OUT'" [disabled]="movie.movieStatus === 'SOLD_OUT'"
+            (click)="bookMovie()">
             {{ movie.movieStatus === 'AVAILABLE' ? 'Book Now!' : movie.movieStatus.replace('_', ' ') }}
         </button>
+        } @else {
+        <div class="d-flex gap-1 tickets-info">
+            <div class="col">
+                <label class="form-label ms-1 fw-semibold">Tickets Allotted</label>
+                <input type="number" class="form-control" placeholder="Tickets Allotted" [value]="movie.ticketsAllotted"
+                    (change)="onTicketsAllottedChange($event.target.value)">
+            </div>
+            <div class="col">
+                <label class="form-label ms-1 fw-semibold">Status</label>
+                <div ngbDropdown class="d-inline-block" container="body">
+                    <button type="button" class="btn btn-outline-primary" id="dropdownStatus" ngbDropdownToggle>
+                        {{ movie.movieStatus.replace('_', ' ') }}
+                    </button>
+                    <div ngbDropdownMenu aria-labelledby="dropdownStatus">
+                        <button ngbDropdownItem (click)="onStatusChange(movieStatus.AVAILABLE)"
+                            [disabled]="movie.movieStatus===movieStatus.AVAILABLE">Available</button>
+                        <button ngbDropdownItem (click)="onStatusChange(movieStatus.SOLD_OUT)"
+                            [disabled]="movie.movieStatus===movieStatus.SOLD_OUT">Sold
+                            Out</button>
+                        <button ngbDropdownItem (click)="onStatusChange(movieStatus.BOOK_ASAP)"
+                            [disabled]="movie.movieStatus===movieStatus.BOOK_ASAP">Book
+                            ASAP</button>
+                    </div>
+                    <button class="btn ms-2 btn-outline-danger" (click)="onStatusChange(null)">
+                        <i class="fa fa-refresh" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        }
     </div>
 </div>

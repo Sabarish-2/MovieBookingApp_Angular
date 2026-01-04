@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from '../../services/auth.service';
+import { UserService } from '../../services/user.service';
 
 function passwordStrength(control: AbstractControl): ValidationErrors | null {
     const pw = control.value as string;
@@ -13,9 +13,13 @@ function passwordStrength(control: AbstractControl): ValidationErrors | null {
 }
 
 function confirmMatch(group: AbstractControl): ValidationErrors | null {
-    const p = group.get('newPassword')?.value;
-    const c = group.get('confirmNewPassword')?.value;
-    return p === c ? null : { newPasswordMismatch: true };
+    const passwordControl = group.get('newPassword');
+    const confirmControl = group.get('confirmNewPassword');
+    if (!passwordControl || !confirmControl || !passwordControl.enabled || !confirmControl.enabled) {
+        return null;
+    }
+
+    return passwordControl.value === confirmControl.value ? null : { newPasswordMismatch: true };
 }
 
 @Component({
@@ -27,63 +31,104 @@ function confirmMatch(group: AbstractControl): ValidationErrors | null {
 })
 export class Forgot {
     forgotForm;
+    submitted = false;
+    stage: 'lookup' | 'reset' = 'lookup';
+    isLoading = false;
+    errorMessage = '';
+    successMessage = '';
 
-    constructor(public fb: FormBuilder, public auth: AuthService, private router: Router) {
+    constructor(private fb: FormBuilder, private userService: UserService, private router: Router) {
         this.forgotForm = this.fb.group(
             {
-                loginOrEmail: ['', Validators.required],
-                code: [''],
-                newPassword: [''],
-                confirmNewPassword: [''],
+                userId: ['', Validators.required],
+                newPassword: [{ value: '', disabled: true }, [Validators.required, passwordStrength]],
+                confirmNewPassword: [{ value: '', disabled: true }, [Validators.required]],
             },
             { validators: confirmMatch }
         );
 
-        this.forgotForm.get('loginOrEmail')?.valueChanges.subscribe((v) => this.onLoginOrEmailChange(v || ''));
+        this.disableResetControls();
     }
-
-    submitted = false;
 
     get f() {
         return this.forgotForm.controls;
     }
 
-    private onLoginOrEmailChange(value: string) {
-        const looksLikeEmail = !!value && value.includes('@');
-        const code = this.forgotForm.get('code')!;
-        const newPassword = this.forgotForm.get('newPassword')!;
-        const confirm = this.forgotForm.get('confirmNewPassword')!;
-
-        if (looksLikeEmail) {
-            code.setValidators([Validators.required]);
-            newPassword.setValidators([Validators.required, passwordStrength]);
-            confirm.setValidators([Validators.required]);
-        } else {
-            code.clearValidators();
-            newPassword.clearValidators();
-            confirm.clearValidators();
-        }
-
-        code.updateValueAndValidity();
-        newPassword.updateValueAndValidity();
-        confirm.updateValueAndValidity();
-    }
-
     submit() {
         this.submitted = true;
-        if (this.forgotForm.invalid) return;
-        const loginOrEmail = this.forgotForm.value.loginOrEmail || '';
-        const looksLikeEmail = !!loginOrEmail && loginOrEmail.includes('@');
-        if (looksLikeEmail) {
-            if (!this.forgotForm.value.code || this.forgotForm.value.code !== '123456') return;
-            if (this.forgotForm.errors?.['newPasswordMismatch']) return;
-            // ensure new password doesn't match old
-            const user = this.auth.findUser(loginOrEmail);
-            if (user && user.password === this.forgotForm.value.newPassword) return;
-            this.auth.updatePassword(loginOrEmail, this.forgotForm.value.newPassword || '');
-            this.router.navigate(['/login']);
-            return;
+        this.errorMessage = '';
+        this.successMessage = '';
+
+        if (this.stage === 'lookup') {
+            const userControl = this.forgotForm.get('userId');
+            if (!userControl || userControl.invalid || userControl.value == null || userControl.value.trim() === '') {
+                return;
+            }
+
+            this.isLoading = true;
+            this.userService.userForgot(userControl.value).subscribe({
+                next: () => {
+                    this.isLoading = false;
+                    this.stage = 'reset';
+                    this.successMessage = 'Verification successful. You can now set a new password.';
+                    this.enableResetControls();
+                },
+                error: (error) => {
+                    this.isLoading = false;
+                    this.errorMessage = error?.error?.message || 'Unable to verify user. Please check the ID and try again.';
+                },
+            });
+        } else {
+            if (this.forgotForm.invalid) {
+                return;
+            }
+
+            const userId = this.forgotForm.get('userId')?.value;
+            const newPassword = this.forgotForm.get('newPassword')?.value;
+            if (!userId || !newPassword) {
+                return;
+            }
+
+            this.isLoading = true;
+            this.userService.userForgotCheck(userId, newPassword).subscribe({
+                next: () => {
+                    this.isLoading = false;
+                    this.successMessage = 'Password updated successfully. Redirecting to login...';
+                    setTimeout(() => this.router.navigate(['/login']), 2000);
+                },
+                error: (error) => {
+                    this.isLoading = false;
+                    this.errorMessage = error?.error?.message || 'Unable to reset password. Please try again.';
+                },
+            });
         }
-        console.log('Forgot payload (no email flow)', this.forgotForm.value);
+    }
+
+    restart() {
+        this.stage = 'lookup';
+        this.submitted = false;
+        this.errorMessage = '';
+        this.successMessage = '';
+        this.forgotForm.reset();
+        this.forgotForm.get('userId')?.enable();
+        this.disableResetControls();
+    }
+
+    private enableResetControls(): void {
+        this.forgotForm.get('newPassword')?.enable();
+        this.forgotForm.get('confirmNewPassword')?.enable();
+        this.forgotForm.get('newPassword')?.setValidators([Validators.required, passwordStrength]);
+        this.forgotForm.get('confirmNewPassword')?.setValidators([Validators.required]);
+        this.forgotForm.get('newPassword')?.updateValueAndValidity();
+        this.forgotForm.get('confirmNewPassword')?.updateValueAndValidity();
+    }
+
+    private disableResetControls(): void {
+        this.forgotForm.get('newPassword')?.disable();
+        this.forgotForm.get('confirmNewPassword')?.disable();
+        this.forgotForm.get('newPassword')?.clearValidators();
+        this.forgotForm.get('confirmNewPassword')?.clearValidators();
+        this.forgotForm.get('newPassword')?.updateValueAndValidity();
+        this.forgotForm.get('confirmNewPassword')?.updateValueAndValidity();
     }
 }

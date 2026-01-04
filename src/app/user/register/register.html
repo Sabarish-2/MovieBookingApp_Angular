@@ -1,65 +1,97 @@
-<form [formGroup]="registerForm" (ngSubmit)="submit()" novalidate>
+<form class="m-5 p-4 border rounded shadow-sm bg-light mx-auto" style="max-width: 500px;" [formGroup]="registerForm"
+    (ngSubmit)="submit()" novalidate>
+    <h2 class="text-center mb-4">Register</h2>
+
     <div class="mb-3">
         <label class="form-label">First Name</label>
-        <input class="form-control" formControlName="firstName" />
+        <input class="form-control" formControlName="firstName" placeholder="Enter your first name" />
         @if ((f.firstName.touched || submitted) && f.firstName.invalid) {
-        <div class="text-danger small">First name is required.</div>
+        <div class="text-danger small mt-1">First name is required.</div>
         }
     </div>
 
     <div class="mb-3">
         <label class="form-label">Last Name</label>
-        <input class="form-control" formControlName="lastName" />
+        <input class="form-control" formControlName="lastName" placeholder="Enter your last name" />
         @if ((f.lastName.touched || submitted) && f.lastName.invalid) {
-        <div class="text-danger small">Last name is required.</div>
+        <div class="text-danger small mt-1">Last name is required.</div>
         }
     </div>
 
     <div class="mb-3">
         <label class="form-label">Login ID</label>
-        <input class="form-control" formControlName="loginID" />
+        <input class="form-control" formControlName="loginID" placeholder="Choose a login ID" />
         @if ((f.loginID.touched || submitted) && f.loginID.invalid) {
-        <div class="text-danger small">Login ID is required.</div>
+        <div class="text-danger small mt-1">Login ID is required.</div>
         }
     </div>
 
     <div class="mb-3">
         <label class="form-label">Email</label>
-        <input type="email" class="form-control" formControlName="emailID" />
-        @if ((f.emailID.touched || submitted) && f.emailID.invalid) {
-        <div class="text-danger small">Enter a valid email.</div>
+        <input type="email" class="form-control" formControlName="emailID" placeholder="Enter your email address" />
+        @if ((f.emailID.touched || submitted) && f.emailID.errors) {
+        @if (f.emailID.errors['required']) {
+        <div class="text-danger small mt-1">Email is required.</div>
+        }
+        @if (f.emailID.errors['email']) {
+        <div class="text-danger small mt-1">Enter a valid email address.</div>
+        }
         }
     </div>
 
     <div class="mb-3">
         <label class="form-label">Password</label>
-        <input type="password" class="form-control" formControlName="password" />
+        <input type="password" class="form-control" formControlName="password" placeholder="Create a password" />
         @if ((f.password.touched || submitted) && f.password.errors) {
         @if (f.password.errors['required']) {
-        <div class="text-danger small">Password is required.</div>
+        <div class="text-danger small mt-1">Password is required.</div>
         }
-        @if (f.password.errors['weakPassword']) {
-        <div class="text-danger small">Password must be at least 8 chars, include number, lower, upper and special char.
-        </div>
+        @if (f.password.errors['minLength']) {
+        <div class="text-danger small mt-1">Password must be at least 8 characters long.</div>
+        }
+        @if (f.password.errors['missingNumber']) {
+        <div class="text-danger small mt-1">Password must include at least one number.</div>
+        }
+        @if (f.password.errors['missingLowercase']) {
+        <div class="text-danger small mt-1">Password must include at least one lowercase letter.</div>
+        }
+        @if (f.password.errors['missingUppercase']) {
+        <div class="text-danger small mt-1">Password must include at least one uppercase letter.</div>
+        }
+        @if (f.password.errors['missingSpecialChar']) {
+        <div class="text-danger small mt-1">Password must include at least one special character.</div>
         }
         }
     </div>
 
     <div class="mb-3">
         <label class="form-label">Confirm Password</label>
-        <input type="password" class="form-control" formControlName="confirmPassword" />
+        <input type="password" class="form-control" formControlName="confirmPassword"
+            placeholder="Re-enter your password" />
         @if ((submitted || f.confirmPassword.touched) && registerForm.errors?.['passwordsMismatch']) {
-        <div class="text-danger small">Passwords do not match.</div>
+        <div class="text-danger small mt-1">Passwords do not match.</div>
         }
     </div>
 
     <div class="mb-3">
         <label class="form-label">Contact Number</label>
-        <input class="form-control" formControlName="contactNumber" />
+        <input class="form-control" formControlName="contactNumber" placeholder="Enter your contact number" />
         @if ((f.contactNumber.touched || submitted) && f.contactNumber.invalid) {
-        <div class="text-danger small">Enter a valid contact number (digits only).</div>
+        <div class="text-danger small mt-1">Enter a valid 10-digit number.</div>
         }
     </div>
 
-    <button class="btn btn-primary" type="submit">Register</button>
+    <div class="d-grid">
+        <button class="btn btn-primary" type="submit">Register</button>
+    </div>
+
+    @if (message) {
+    <div class="text-center mt-3" [ngClass]="{'text-success': message.includes('successful'), 'text-danger': message.includes('failed')}">
+        {{ message }}
+    </div>
+    }
+
+    <div class="text-center mt-3">
+        <span>Already have an account? </span><a href="/login" class="text-decoration-none">Login</a>
+    </div>
 </form>

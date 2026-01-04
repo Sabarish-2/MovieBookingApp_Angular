@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
 import { Observable } from 'rxjs';
 import { catchError } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
     selector: 'app-movie-list',
@@ -19,7 +20,7 @@ export class MovieList implements OnInit {
     searchTheatreName: string = '';
     searchForm!: FormGroup;
 
-    constructor(private movieService: MovieService, private formBuilder: FormBuilder) { }
+    constructor(private movieService: MovieService, private authService: AuthService, private formBuilder: FormBuilder) {}
 
     movieses: Movie[] = [
         {
@@ -87,13 +88,38 @@ export class MovieList implements OnInit {
         },
     ];
 
+    isAdmin: boolean = false;
+
+    addMovieMovieName: string = '';
+    addMovieTheatreName: string = '';
+    addMovieTicketsAllotted: number = 0;
+    addMovieForm!: FormGroup;
+
+
+    addMovie() {
+        this.movieService.addMovie({
+            movieName: this.addMovieForm.get('addMovieMovieName')?.value,
+            theatreName: this.addMovieForm.get('addMovieTheatreName')?.value,
+            ticketsAllotted: this.addMovieForm.get('addMovieTicketsAllotted')?.value,
+            ticketsAvailable: 0,
+            movieStatus: MovieStatus.AVAILABLE,
+        }).subscribe(() => {
+            this.onInput();
+        });
+    }
+
     movies$: Observable<Movie[]> = new Observable<Movie[]>();
 
     ngOnInit(): void {
-
         this.searchForm = this.formBuilder.group({
             searchMovieName: [''],
             searchTheatreName: [''],
+        });
+        
+        this.addMovieForm = this.formBuilder.group({
+            addMovieMovieName: [''],
+            addMovieTheatreName: [''],
+            addMovieTicketsAllotted: [0],
         });
 
         this.movies$ = this.movieService.getAllMovies().pipe(
@@ -102,6 +128,7 @@ export class MovieList implements OnInit {
                 return [];
             })
         );
+        
         this.searchForm.get('searchMovieName')?.valueChanges.subscribe((value) => {
             this.searchMovieName = value;
             this.onInput();
@@ -110,6 +137,7 @@ export class MovieList implements OnInit {
             this.searchTheatreName = value;
             this.onInput();
         });
+        this.isAdmin = this.authService.isAdmin();
     }
 
     onInput(): void {

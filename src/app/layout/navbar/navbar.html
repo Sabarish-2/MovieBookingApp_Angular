@@ -1,12 +1,12 @@
 <nav class="navbar fixed-top bg-body-tertiary" data-bs-theme="dark">
     <div class="container-fluid">
-        <a class="navbar-brand">MovieBooking App</a>
+        <a class="navbar-brand" routerLink="/">MovieBooking App</a>
 
         <ul class="navbar-nav me-auto flex-row">
             <li class="nav-item me-3">
                 <a class="nav-link active" aria-current="page" routerLink="/">Home</a>
             </li>
-            @if (user) {
+            @if (userID) {
             <li class="nav-item me-3">
                 <a class="nav-link" routerLink="/my-bookings">MyBookings</a>
             </li>
@@ -14,8 +14,8 @@
         </ul>
 
         <div class="d-flex">
-            @if (user) {
-            <span class="navbar-text fw-bold mx-2">Hi, {{ user.firstName || user.loginID }}</span>
+            @if (isLoggedIn) {
+            <span class="navbar-text fw-bold me-5">Hi, {{ userID }}</span>
             <button class="btn btn-sm btn-outline-danger" (click)="logout()">Logout</button>
             } @else {
             <button class="btn btn-outline-success me-2" routerLink="/login">Login</button>

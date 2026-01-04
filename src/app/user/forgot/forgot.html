@@ -1,21 +1,21 @@
-<form [formGroup]="forgotForm" (ngSubmit)="submit()" novalidate>
+<form [formGroup]="forgotForm" (ngSubmit)="submit()" novalidate class="forgot-form">
+    @if (errorMessage) {
+    <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+    }
+
+    @if (successMessage) {
+    <div class="alert alert-success" role="alert">{{ successMessage }}</div>
+    }
+
     <div class="mb-3">
-        <label class="form-label">Login ID or Email</label>
-        <input class="form-control" formControlName="loginOrEmail" />
-        @if ((f.loginOrEmail.touched || submitted) && f.loginOrEmail.invalid) {
-        <div class="text-danger small">This field is required.</div>
+        <label class="form-label">User ID</label>
+        <input class="form-control" formControlName="userId" [readonly]="stage === 'reset'" />
+        @if ((f.userId.touched || submitted) && f.userId.invalid) {
+        <div class="text-danger small">User ID is required.</div>
         }
     </div>
 
-    @if (forgotForm.get('loginOrEmail')?.value?.includes('@')) {
-    <div class="mb-3">
-        <label class="form-label">Code</label>
-        <input class="form-control" formControlName="code" />
-        @if ((f.code.touched || submitted) && f.code.invalid) {
-        <div class="text-danger small">Code is required.</div>
-        }
-    </div>
-
+    @if (stage === 'reset') {
     <div class="mb-3">
         <label class="form-label">New Password</label>
         <input type="password" class="form-control" formControlName="newPassword" />
@@ -24,13 +24,9 @@
         <div class="text-danger small">New password is required.</div>
         }
         @if (f.newPassword.errors['weakPassword']) {
-        <div class="text-danger small">Password must be at least 8 chars, include number, lower, upper and special char.
-        </div>
+        <div class="text-danger small">Password must be at least 8 characters and include a number, lowercase,
+            uppercase, and special character.</div>
         }
-        }
-        @if (auth.findUser(forgotForm.get('loginOrEmail')?.value || '') &&
-        auth.findUser(forgotForm.get('loginOrEmail')?.value || '')?.password === f.newPassword.value) {
-        <div class="text-danger small">New password must not match the old password.</div>
         }
     </div>
 
@@ -38,10 +34,23 @@
         <label class="form-label">Confirm New Password</label>
         <input type="password" class="form-control" formControlName="confirmNewPassword" />
         @if ((f.confirmNewPassword.touched || submitted) && forgotForm.errors?.['newPasswordMismatch']) {
-        <div class="text-danger small">New passwords do not match.</div>
+        <div class="text-danger small">Passwords do not match.</div>
         }
     </div>
     }
 
-    <button class="btn btn-primary" type="submit">Submit</button>
+    <div class="d-flex gap-2 align-items-center">
+        <button class="btn btn-primary" type="submit" [disabled]="isLoading">
+            @if (isLoading) {
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            }
+            {{ stage === 'lookup' ? 'Send Reset Request' : 'Update Password' }}
+        </button>
+
+        @if (stage === 'reset') {
+        <button type="button" class="btn btn-outline-secondary" (click)="restart()" [disabled]="isLoading">
+            Start Over
+        </button>
+        }
+    </div>
 </form>
