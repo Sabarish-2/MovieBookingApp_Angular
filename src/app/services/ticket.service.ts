@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Ticket } from '../tickets/model/tickets.model';
+import { environment } from '../../environment';
 
 export interface BookingResponse {
     ticketID: string;
@@ -17,7 +18,8 @@ export interface BookingResponse {
     providedIn: 'root',
 })
 export class TicketService {
-    private apiUrl = 'http://localhost:8090/api/v1.0/moviebooking';
+    private baseApi = environment.baseApi;
+    private apiUrl = this.baseApi + '/api/v1.0/moviebooking';
     private baseUrl = this.apiUrl + '/tickets';
 
     constructor(private http: HttpClient) { }
