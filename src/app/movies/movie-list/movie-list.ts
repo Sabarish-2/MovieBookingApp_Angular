@@ -4,10 +4,11 @@ import { Movie } from '../model/Movie.model';
 import { MovieStatus } from '../enums/MovieStatus.enum';
 import { MovieService } from '../../services/movie.service';
 import { CommonModule } from '@angular/common';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { catchError } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { HealthCheckService } from '../../services/health-check.service';
 
 @Component({
     selector: 'app-movie-list',
@@ -20,7 +21,8 @@ export class MovieList implements OnInit {
     searchTheatreName: string = '';
     searchForm!: FormGroup;
 
-    constructor(private movieService: MovieService, private authService: AuthService, private formBuilder: FormBuilder) {}
+    // public so template can call healthCheck.sleeping()
+    constructor(private movieService: MovieService, private authService: AuthService, private formBuilder: FormBuilder, public healthCheck: HealthCheckService) {}
 
     movieses: Movie[] = [
         {
@@ -89,46 +91,60 @@ export class MovieList implements OnInit {
     ];
 
     isAdmin: boolean = false;
+    isAddingMovie = false;      // true while addMovie HTTP call is in-flight
+    addMovieError: string | null = null;   // inline error under Add Movie form
+    addMovieSuccess: string | null = null; // inline success message
 
     addMovieMovieName: string = '';
     addMovieTheatreName: string = '';
     addMovieTicketsAllotted: number = 0;
     addMovieForm!: FormGroup;
 
-
     addMovie() {
+        this.addMovieError = null;
+        this.addMovieSuccess = null;
+        this.isAddingMovie = true;   // start spinner on Add Movie button
+
         this.movieService.addMovie({
             movieName: this.addMovieForm.get('addMovieMovieName')?.value,
             theatreName: this.addMovieForm.get('addMovieTheatreName')?.value,
             ticketsAllotted: this.addMovieForm.get('addMovieTicketsAllotted')?.value,
             ticketsAvailable: 0,
             movieStatus: MovieStatus.AVAILABLE,
-        }).subscribe(() => {
-            this.onInput();
+        }).subscribe({
+            next: () => {
+                this.isAddingMovie = false;
+                this.addMovieSuccess = 'Movie added successfully!';
+                this.onInput();   // refresh list
+            },
+            error: (err) => {
+                this.isAddingMovie = false;
+                if (err.status === 502 || err.status === 503) {
+                    this.addMovieError = 'Service is waking up, please try again in a moment.';
+                } else {
+                    this.addMovieError = err?.error?.message || 'Failed to add movie. Please try again.';
+                }
+            }
         });
     }
 
     movies$: Observable<Movie[]> = new Observable<Movie[]>();
+    moviesError: string | null = null;   // shown when movie list fetch fails
 
     ngOnInit(): void {
         this.searchForm = this.formBuilder.group({
             searchMovieName: [''],
             searchTheatreName: [''],
         });
-        
+
         this.addMovieForm = this.formBuilder.group({
             addMovieMovieName: [''],
             addMovieTheatreName: [''],
             addMovieTicketsAllotted: [0],
         });
 
-        this.movies$ = this.movieService.getAllMovies().pipe(
-            catchError((error) => {
-                console.error('Error fetching movies:', error);
-                return [];
-            })
-        );
-        
+        this.loadMovies();
+
         this.searchForm.get('searchMovieName')?.valueChanges.subscribe((value) => {
             this.searchMovieName = value;
             this.onInput();
@@ -140,11 +156,34 @@ export class MovieList implements OnInit {
         this.isAdmin = this.authService.isAdmin();
     }
 
+    // Extracted so it can be called from both ngOnInit and search
+    private loadMovies(): void {
+        this.moviesError = null;
+        this.movies$ = this.movieService.getAllMovies().pipe(
+            catchError((error) => {
+                console.error('Error fetching movies:', error);
+                // 502/503 → sleeping; interceptor already set the signal, just show a message
+                if (error.status === 502 || error.status === 503) {
+                    this.moviesError = 'Services are waking up. Movies will load automatically once ready.';
+                } else {
+                    this.moviesError = 'Could not load movies. Please refresh.';
+                }
+                return of([]);   // emit empty array so the template doesn't hang
+            })
+        );
+    }
+
     onInput(): void {
+        this.moviesError = null;
         this.movies$ = this.movieService.searchMovies(this.searchMovieName, this.searchTheatreName).pipe(
             catchError((error) => {
                 console.error('Error fetching movies:', error);
-                return [];
+                if (error.status === 502 || error.status === 503) {
+                    this.moviesError = 'Services are waking up. Please try again in a moment.';
+                } else {
+                    this.moviesError = 'Search failed. Please try again.';
+                }
+                return of([]);
             })
         );
     }

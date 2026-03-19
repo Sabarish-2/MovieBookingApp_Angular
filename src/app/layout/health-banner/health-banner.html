@@ -1,0 +1,25 @@
+<!--
+    Show the banner in two cases:
+    1. sleeping() is true  → at least one service returned 502/503
+    2. pendingCount() > 0  → health-check is still in flight (checking phase)
+-->
+@if (healthCheck.sleeping() || healthCheck.pendingCount() > 0) {
+  <div class="health-banner">
+    <span class="spinner"></span>
+    @if (healthCheck.pendingCount() > 0 && !healthCheck.sleeping()) {
+      <!-- Still checking — no sleeping confirmed yet -->
+      <span>
+        🔍 Checking services… ({{ healthCheck.pendingCount() }} remaining)
+      </span>
+    } @else {
+      <!-- At least one sleeping service detected -->
+      <span>
+        ⚠️ Backend services are waking up on Render (free tier).
+        This may take up to 60 seconds — please wait…
+        @if (healthCheck.pendingCount() > 0) {
+          <em class="ms-1 opacity-75">({{ healthCheck.pendingCount() }} still responding)</em>
+        }
+      </span>
+    }
+  </div>
+}

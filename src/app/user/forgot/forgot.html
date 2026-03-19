@@ -49,18 +49,27 @@
         <div class="text-danger small mt-1">Passwords do not match.</div>
         }
     </div>
-    }
-
-    <div class="d-flex gap-2 align-items-center mb-2">
-        <button class="btn btn-primary w-100" type="submit" [disabled]="isLoading">
+    }    <div class="d-flex gap-2 align-items-center mb-2">
+        <!--
+            Disabled when: request in-flight (isLoading) OR a service is sleeping (healthCheck.sleeping())
+        -->
+        <button class="btn btn-primary w-100" type="submit" [disabled]="isLoading || healthCheck.sleeping()">
             @if (isLoading) {
-            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
             }
             {{ stage === 'lookup' ? 'Verify User' : 'Update Password' }}
         </button>
     </div>
+
+    <!-- Shown inline under button when services are waking up -->
+    @if (healthCheck.sleeping()) {
+        <div class="text-warning small text-center mb-2">
+            ⚠️ Services are waking up, please wait a moment…
+        </div>
+    }
+
     @if (errorMessage) {
-    <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
     }
 
 </form>

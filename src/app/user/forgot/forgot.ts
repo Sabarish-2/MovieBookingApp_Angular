@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, Validati
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { Observable, take } from 'rxjs';
+import { HealthCheckService } from '../../services/health-check.service';
 
 function passwordStrength(control: AbstractControl): ValidationErrors | null {
     const pw = control.value as string;
@@ -52,7 +53,7 @@ export class Forgot {
     errorMessage = '';
     successMessage = '';
 
-    constructor(private fb: FormBuilder, private userService: UserService, private router: Router, private cdr: ChangeDetectorRef) {
+    constructor(private fb: FormBuilder, private userService: UserService, private router: Router, private cdr: ChangeDetectorRef, public healthCheck: HealthCheckService) {
         this.forgotForm = this.fb.group({});
 
         this.forgotForm = this.fb.group(

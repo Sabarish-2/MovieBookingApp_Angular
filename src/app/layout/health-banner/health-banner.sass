@@ -1,0 +1,29 @@
+// Sticky banner that sits at the very top of the viewport.
+.health-banner
+  position: sticky
+  top: 0
+  z-index: 9999          // Always on top of other content.
+  display: flex
+  align-items: center
+  gap: 10px
+  padding: 10px 20px
+  background: #fff3cd    // Soft amber – recognisable "warning" colour.
+  color: #856404
+  border-bottom: 1px solid #ffc107
+  font-size: 0.9rem
+  font-weight: 500
+
+// Simple CSS-only spinner – no extra dependency needed.
+.spinner
+  display: inline-block
+  width: 16px
+  height: 16px
+  border: 3px solid #ffc107
+  border-top-color: #856404
+  border-radius: 50%
+  // `animation` is plain CSS; SASS passes it through unchanged.
+  animation: spin 0.8s linear infinite
+
+@keyframes spin
+  to
+    transform: rotate(360deg)
