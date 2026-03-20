@@ -1,25 +1,31 @@
-<!--
-    Show the banner in two cases:
-    1. sleeping() is true  → at least one service returned 502/503
-    2. pendingCount() > 0  → health-check is still in flight (checking phase)
--->
-@if (healthCheck.sleeping() || healthCheck.pendingCount() > 0) {
+<!-- Health Check Banner - Only show when loading or when services are unavailable -->
+@if (healthCheck.isLoading() || healthCheck.sleeping()) {
   <div class="health-banner">
-    <span class="spinner"></span>
-    @if (healthCheck.pendingCount() > 0 && !healthCheck.sleeping()) {
-      <!-- Still checking — no sleeping confirmed yet -->
-      <span>
-        🔍 Checking services… ({{ healthCheck.pendingCount() }} remaining)
-      </span>
-    } @else {
-      <!-- At least one sleeping service detected -->
-      <span>
-        ⚠️ Backend services are waking up on Render (free tier).
-        This may take up to 60 seconds — please wait…
-        @if (healthCheck.pendingCount() > 0) {
-          <em class="ms-1 opacity-75">({{ healthCheck.pendingCount() }} still responding)</em>
-        }
-      </span>
+    @if (healthCheck.isLoading()) {
+      <!-- Loading State -->
+      <div class="loading-section">
+        <span class="spinner"></span>
+        <span>🔍 Initializing services... ({{ healthCheck.getPendingCount() }} remaining)</span>
+        <span class="buttons-disabled">Please wait while we prepare the application</span>
+      </div>
+    }
+
+    @if (healthCheck.allServicesChecked() && healthCheck.sleeping()) {
+      <!-- Only show results if there are unavailable services -->
+      <div class="results-section">
+        <div class="summary">
+          <span class="unavailable-message">
+            ⚡ Services are starting up... Please wait while we prepare everything for you.
+          </span>
+          <button class="recheck-btn" (click)="recheckServices()" [disabled]="healthCheck.isLoading()">
+            @if (healthCheck.isLoading()) {
+              <span class="spinner-small"></span> Checking...
+            } @else {
+              Refresh Status
+            }
+          </button>
+        </div>
+      </div>
     }
   </div>
 }

@@ -11,12 +11,16 @@ import { HealthCheckService } from '../../services/health-check.service';
 })
 export class HealthBanner implements OnInit {
 
-    // healthCheck is public so the template can call healthCheck.hasErrors()
-    // and healthCheck.statuses() directly as signal reads.
-    constructor(public healthCheck: HealthCheckService) {}
-
+    constructor(public healthCheck: HealthCheckService) { } 
+    
     ngOnInit(): void {
-        // Kick off parallel health-check on app load.
-        this.healthCheck.checkAll();
+        // Kick off health check on app load (with throttling)
+        this.healthCheck.checkAllServices(false);
+    }    
+    /**
+     * Manual trigger for health check (bypasses throttling)
+     */
+    recheckServices(): void {
+        this.healthCheck.checkAllServices(true);
     }
 }
