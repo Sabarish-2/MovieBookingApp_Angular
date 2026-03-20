@@ -6,7 +6,7 @@
         <label class="form-label">Email ID / Login ID</label>
         <input class="form-control" formControlName="loginID" placeholder="Enter your email or login ID" />
         @if ((f.loginID.touched || submitted) && f.loginID.invalid) {
-        <div class="text-danger small mt-1">Email ID or Login ID is required.</div>
+            <div class="text-danger small mt-1">Email ID or Login ID is required.</div>
         }
     </div>
 
@@ -14,22 +14,42 @@
         <label class="form-label">Password</label>
         <input type="password" class="form-control" formControlName="password" placeholder="Enter your password" />
         @if ((f.password.touched || submitted) && f.password.invalid) {
-        <div class="text-danger small mt-1">Password is required.</div>
+            <div class="text-danger small mt-1">Password is required.</div>
         }
     </div>
 
+    <!-- API error message (wrong creds, service down, etc.) -->
     @if (error) {
-    <div class="text-danger mb-3 text-center">{{ error }}</div>
+        <div class="alert alert-danger py-2 mb-3" role="alert">{{ error }}</div>
     }
 
     <div class="d-grid">
-        <button class="btn btn-primary" type="submit">Login</button>
+        <!--
+            Disabled when:
+              - isLoading: request is in-flight
+              - healthCheck.sleeping(): interceptor detected a sleeping service (502/503)
+        -->
+        <button class="btn btn-primary" type="submit" [disabled]="isLoading || healthCheck.sleeping()">
+            @if (isLoading) {
+                <!-- Bootstrap spinner shown while request is in-flight -->
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Logging in...
+            } @else {
+                Login
+            }
+        </button>
     </div>
+
+    <!-- Shown only when a sleeping service was detected; sits right under the button -->
+    @if (healthCheck.sleeping()) {
+        <div class="text-center text-warning small mt-2">
+            ⚠️ Services are waking up, please wait a moment…
+        </div>
+    }
 
     <div class="text-center mt-3">
         <a href="/forgot" class="text-decoration-none">Forgot Password?</a>
     </div>
-
     <div class="text-center mt-2">
         <span>Don't have an account? </span><a href="/register" class="text-decoration-none">Register</a>
     </div>

@@ -13,10 +13,18 @@
             }
         </ul>
 
-        <div class="d-flex">
-            @if (isLoggedIn) {
+        <div class="d-flex">            @if (isLoggedIn) {
             <span class="navbar-text fw-bold me-5">Hi, {{ userID }}</span>
-            <button class="btn btn-sm btn-outline-danger" (click)="logout()">Logout</button>
+            <button class="btn btn-sm btn-outline-danger" 
+                [disabled]="isLoggingOut"
+                (click)="logout()">
+                @if (isLoggingOut) {
+                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    Logging out...
+                } @else {
+                    Logout
+                }
+            </button>
             } @else {
             <button class="btn btn-outline-success me-2" routerLink="/login">Login</button>
             <span class="navbar-text mx-2">or</span>

@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { MovieStatus } from '../enums/MovieStatus.enum';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { MovieService } from '../../services/movie.service';
+import { HealthCheckService } from '../../services/health-check.service';
 
 @Component({
     selector: 'app-movie-card',
@@ -19,33 +20,54 @@ export class MovieCard {
     @Input() isAdmin!: boolean;
     movieStatus = MovieStatus;
 
-    constructor(private movieService: MovieService, private router: Router, private cdr: ChangeDetectorRef) { }
+    isUpdatingStatus = false;   // true while updateStatus call is in-flight
+    isUpdatingTickets = false;  // true while updateTickets call is in-flight
+    isDeleting = false;         // true while delete call is in-flight
+    cardError: string | null = null;  // inline error shown on the card
+
+    // public so template can call healthCheck.sleeping()
+    constructor(private movieService: MovieService, private router: Router, private cdr: ChangeDetectorRef, public healthCheck: HealthCheckService) { }
 
     onStatusChange(newStatus: MovieStatus | null): void {
-        const confirmChange = (newStatus) ? confirm(`Are you sure you want to set the status to ${newStatus.replace('_', ' ')}?`) : confirm(`Are you sure you want to reset the status?`);
-        if (confirmChange) {
-            this.movieService.updateMovieByID(this.movie.movieName, this.movie.theatreName, { adminOverrideStatus: newStatus }).subscribe(
-                next => {
-                    this.movie = { ...this.movie, movieStatus: next.movieStatus };
-                    this.cdr.detectChanges();
-                },
-                error => alert('Failed to update movie status. ' + error.error)
-            );
-        }
+        const label = newStatus ? newStatus.replace('_', ' ') : 'reset';
+        if (!confirm(`Are you sure you want to set the status to ${label}?`)) return;
 
+        this.isUpdatingStatus = true;
+        this.cardError = null;
+
+        this.movieService.updateMovieByID(this.movie.movieName, this.movie.theatreName, { adminOverrideStatus: newStatus }).subscribe({
+            next: updated => {
+                this.isUpdatingStatus = false;
+                this.movie = { ...this.movie, movieStatus: updated.movieStatus };
+                this.cdr.detectChanges();
+            },
+            error: err => {
+                this.isUpdatingStatus = false;
+                // Show error inline on the card instead of alert()
+                this.cardError = err?.error || err?.message || 'Failed to update status.';
+                this.cdr.detectChanges();
+            }
+        });
     }
 
     onTicketsAllottedChange(newTickets: string): void {
-        const confirmChange = confirm(`Are you sure you want to change tickets allotted to ${newTickets}?`);
-        if (confirmChange) {
-            this.movieService.updateMovieByID(this.movie.movieName, this.movie.theatreName, { ticketsAllotted: Number(newTickets) }).subscribe(next => {
-                this.movie = { ...this.movie, ticketsAllotted: Number(next.ticketsAllotted) };
+        if (!confirm(`Are you sure you want to change tickets allotted to ${newTickets}?`)) return;
+
+        this.isUpdatingTickets = true;
+        this.cardError = null;
+
+        this.movieService.updateMovieByID(this.movie.movieName, this.movie.theatreName, { ticketsAllotted: Number(newTickets) }).subscribe({
+            next: updated => {
+                this.isUpdatingTickets = false;
+                this.movie = { ...this.movie, ticketsAllotted: Number(updated.ticketsAllotted) };
                 this.cdr.detectChanges();
             },
-                error => alert('Failed to update tickets allotted. ' + error.error)
-            );
-        }
-
+            error: err => {
+                this.isUpdatingTickets = false;
+                this.cardError = err?.error || err?.message || 'Failed to update tickets.';
+                this.cdr.detectChanges();
+            }
+        });
     }
 
     bookMovie() {
@@ -53,12 +75,21 @@ export class MovieCard {
     }
 
     deleteMovie(): void {
-        const confirmDelete = confirm(`Are you sure you want to delete the movie '${this.movie.movieName}'?`);
-        if (confirmDelete) {
-            this.movieService.deleteMovieByID(this.movie.movieName, this.movie.theatreName).subscribe(() => {
-                window.location.reload();
-            });
-        }
-    }
+        if (!confirm(`Are you sure you want to delete '${this.movie.movieName}'?`)) return;
 
+        this.isDeleting = true;
+        this.cardError = null;
+
+        this.movieService.deleteMovieByID(this.movie.movieName, this.movie.theatreName).subscribe({
+            next: () => {
+                this.isDeleting = false;
+                window.location.reload();
+            },
+            error: err => {
+                this.isDeleting = false;
+                this.cardError = err?.error || err?.message || 'Failed to delete movie.';
+                this.cdr.detectChanges();
+            }
+        });
+    }
 }

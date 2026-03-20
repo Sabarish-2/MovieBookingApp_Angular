@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, Validati
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { NewUser } from '../model/NewUser.model';
+import { HealthCheckService } from '../../services/health-check.service';
 
 function passwordStrength(control: AbstractControl): ValidationErrors | null {
     const pw = control.value as string;
@@ -42,13 +43,14 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
     templateUrl: './register.html',
     styleUrl: './register.sass',
 })
-export class Register {
-
-    registerForm;
+export class Register {    registerForm;
     message: string | null = null;
+    messageIsError = false;   // true → red alert, false → green alert
     submitted = false;
+    isLoading = false;         // true while HTTP register call is in-flight
 
-    constructor(private fb: FormBuilder, private userService: UserService, private router: Router) {
+    // public so template can read healthCheck.sleeping() signal
+    constructor(private fb: FormBuilder, private userService: UserService, private router: Router, public healthCheck: HealthCheckService) {
         this.registerForm = this.fb.group(
             {
                 firstName: ['', Validators.required],
@@ -66,18 +68,31 @@ export class Register {
 
     get f() {
         return this.registerForm.controls;
-    }
-
-    submit() {
+    }    submit() {
         this.submitted = true;
         if (this.registerForm.invalid) return;
 
+        this.isLoading = true;    // start spinner
+        this.message = null;
+
         this.userService.userRegister(this.registerForm.value as NewUser).subscribe({
             next: _ => {
-                this.message = 'Registration successful! Please login.';
+                this.isLoading = false;
+                this.messageIsError = false;
+                this.message = 'Registration successful! Redirecting to login…';
                 this.router.navigate(['/login']);
             },
-            error: err => this.message = 'Registration failed: ' + err.message,
+            error: err => {
+                this.isLoading = false;
+                this.messageIsError = true;
+                if (err.status === 409) {
+                    this.message = 'Login ID or email already exists. Please choose another.';
+                } else if (err.status === 502 || err.status === 503) {
+                    this.message = 'Service is waking up, please try again in a moment.';
+                } else {
+                    this.message = err?.error?.message || 'Registration failed. Please try again.';
+                }
+            },
         });
     }
 }

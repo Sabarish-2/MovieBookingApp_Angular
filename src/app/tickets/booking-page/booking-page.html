@@ -6,60 +6,80 @@
                     <h4 class="mb-0">Book Tickets</h4>
                 </div>
                 <div class="card-body">
-                    @if (!movieData) {
-                    <div class="alert alert-info" role="alert">
-                        Loading movie details...
-                    </div>
-                    } @else {
-                    <div class="ticket-info mb-3">
-                        <p class="mb-1">
-                            <strong>Movie:</strong> {{ movieData.movieName }}
-                        </p>
-                        <p class="mb-1">
-                            <strong>Theatre:</strong> {{ movieData.theatreName }}
-                        </p>
-                        <p class="mb-1">
-                            <strong>Status:</strong>
-                            <span
-                                [class]="'badge ' + (movieData.movieStatus === 'AVAILABLE' ? 'bg-success' : movieData.movieStatus === 'SOLD_OUT' ? 'bg-danger' : 'bg-warning')">
-                                {{ movieData.movieStatus.replace('_', ' ') }}
-                            </span>
-                        </p>
-                        <p class="mb-1">
-                            <strong>Available:</strong> {{ movieData.ticketsAvailable }} / {{ movieData.ticketsAllotted}}
-                        </p>
-                        @if (seatPreview) {
-                        <p class="mb-0">
-                            <strong>Seats:</strong> {{ seatPreview }}
-                        </p>
-                        }
-                    </div>
 
-                    @if (bookingSuccess) {
-                    <div class="alert alert-success" role="alert">
-                        <i class="fa fa-check-circle me-2"></i>
-                        {{ bookingMessage }}
-                    </div>
-                    } @else {
-                    <div class="mb-3">
-                        <label for="numberOfSeats" class="form-label fw-semibold">Number of Seats</label>
-                        <input type="number" id="numberOfSeats" class="form-control" [(ngModel)]="numberOfSeats"
-                            [attr.min]="1" [attr.max]="movieData.ticketsAvailable"
-                            [disabled]="movieData.ticketsAvailable === 0" placeholder="Enter number of seats">
-                    </div>
-
-                    <button class="btn btn-primary w-100"
-                        [disabled]="isLoading || movieData.movieStatus === 'SOLD_OUT' || movieData.ticketsAvailable === 0"
-                        (click)="bookTickets()">
-                        @if (isLoading) {
-                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Booking...
-                        } @else {
-                        <i class="fa fa-ticket me-2"></i>
-                        Book Now
-                        }
-                    </button>
+                    <!-- Shown when movie details could not be fetched (502/503 or other) -->
+                    @if (loadError) {
+                        <div class="alert alert-warning" role="alert">{{ loadError }}</div>
                     }
+
+                    @if (!movieData && !loadError) {
+                        <div class="alert alert-info" role="alert">
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Loading movie details…
+                        </div>
+                    }
+
+                    @if (movieData) {
+                        <div class="ticket-info mb-3">
+                            <p class="mb-1"><strong>Movie:</strong> {{ movieData.movieName }}</p>
+                            <p class="mb-1"><strong>Theatre:</strong> {{ movieData.theatreName }}</p>
+                            <p class="mb-1">
+                                <strong>Status:</strong>
+                                <span [class]="'badge ' + (movieData.movieStatus === 'AVAILABLE' ? 'bg-success' : movieData.movieStatus === 'SOLD_OUT' ? 'bg-danger' : 'bg-warning')">
+                                    {{ movieData.movieStatus.replace('_', ' ') }}
+                                </span>
+                            </p>
+                            <p class="mb-1">
+                                <strong>Available:</strong> {{ movieData.ticketsAvailable }} / {{ movieData.ticketsAllotted }}
+                            </p>
+                            @if (seatPreview) {
+                                <p class="mb-0"><strong>Seats:</strong> {{ seatPreview }}</p>
+                            }
+                        </div>
+
+                        @if (bookingSuccess) {
+                            <div class="alert alert-success" role="alert">
+                                <i class="fa fa-check-circle me-2"></i>{{ bookingMessage }}
+                            </div>
+                        } @else {
+                            <div class="mb-3">
+                                <label for="numberOfSeats" class="form-label fw-semibold">Number of Seats</label>
+                                <input type="number" id="numberOfSeats" class="form-control"
+                                    [(ngModel)]="numberOfSeats"
+                                    [attr.min]="1"
+                                    [attr.max]="movieData.ticketsAvailable"
+                                    [disabled]="movieData.ticketsAvailable === 0">
+                            </div>
+
+                            <!-- Inline booking error (replaces alert()) -->
+                            @if (bookingError) {
+                                <div class="alert alert-danger py-2 mb-2" role="alert">{{ bookingError }}</div>
+                            }
+
+                            <!--
+                                Disabled when:
+                                  - isLoading: booking request in-flight
+                                  - sold out
+                                  - healthCheck.sleeping(): service is waking up
+                            -->
+                            <button class="btn btn-primary w-100"
+                                [disabled]="isLoading || movieData.movieStatus === 'SOLD_OUT' || movieData.ticketsAvailable === 0 || healthCheck.sleeping()"
+                                (click)="bookTickets()">
+                                @if (isLoading) {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    Booking…
+                                } @else {
+                                    <i class="fa fa-ticket me-2"></i>Book Now
+                                }
+                            </button>
+
+                            <!-- Sleeping hint shown inline under the button -->
+                            @if (healthCheck.sleeping()) {
+                                <div class="text-center text-warning small mt-2">
+                                    ⚠️ Services are waking up, please wait a moment…
+                                </div>
+                            }
+                        }
                     }
                 </div>
             </div>

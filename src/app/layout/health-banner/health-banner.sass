@@ -1,0 +1,81 @@
+// Health check banner styles
+.health-banner
+  position: sticky
+  top: 0
+  z-index: 9999
+  padding: 15px 20px
+  background: #f8f9fa
+  border-bottom: 2px solid #dee2e6
+  font-size: 0.9rem
+  .loading-section
+    display: flex
+    align-items: center
+    gap: 15px
+    color: #495057
+    font-weight: 500
+
+    .buttons-disabled
+      color: #6c757d
+      font-weight: 400
+      font-size: 0.85rem
+      font-style: italic
+
+  .results-section
+    .summary
+      display: flex
+      align-items: center
+      gap: 15px
+      margin-bottom: 10px
+
+      .all-ready
+        color: #28a745
+        font-weight: 600
+
+      .unavailable-message
+        color: #fd7e14
+        font-weight: 600
+        display: flex
+        align-items: center
+        gap: 8px
+
+      .recheck-btn
+        background: #007bff
+        color: white
+        border: none
+        padding: 6px 12px
+        border-radius: 4px
+        cursor: pointer
+        font-size: 0.8rem
+        transition: background 0.2s
+        display: flex
+        align-items: center
+        gap: 5px
+
+        &:hover:not(:disabled)
+          background: #0056b3        
+        &:disabled
+          background: #6c757d
+          cursor: not-allowed
+
+// Spinner animations
+.spinner
+  display: inline-block
+  width: 16px
+  height: 16px
+  border: 3px solid #007bff
+  border-top-color: transparent
+  border-radius: 50%
+  animation: spin 0.8s linear infinite
+
+.spinner-small
+  display: inline-block
+  width: 12px
+  height: 12px
+  border: 2px solid #ffffff
+  border-top-color: transparent
+  border-radius: 50%
+  animation: spin 0.6s linear infinite
+
+@keyframes spin
+  to
+    transform: rotate(360deg)

@@ -1,0 +1,31 @@
+<!-- Health Check Banner - Show when loading OR when bannerVisible is true (persisted) -->
+@if (healthCheck.isLoading() || healthCheck.bannerVisible()) {
+  <div class="health-banner">
+    @if (healthCheck.isLoading()) {
+      <!-- Loading State -->
+      <div class="loading-section">
+        <span class="spinner"></span>
+        <span>🔍 Initializing services... ({{ healthCheck.getPendingCount() }} remaining)</span>
+        <span class="buttons-disabled">Please wait while we prepare the application</span>
+      </div>
+    }
+
+    @if (healthCheck.allServicesChecked() && healthCheck.bannerVisible()) {
+      <!-- Only show results if there are unavailable services -->
+      <div class="results-section">
+        <div class="summary">
+          <span class="unavailable-message">
+            ⚡ Services are starting up... Please wait while we prepare everything for you.
+          </span>
+          <button class="recheck-btn" (click)="recheckServices()" [disabled]="healthCheck.isLoading()">
+            @if (healthCheck.isLoading()) {
+              <span class="spinner-small"></span> Checking...
+            } @else {
+              Refresh Status
+            }
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+}

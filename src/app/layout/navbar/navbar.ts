@@ -13,15 +13,18 @@ export class Navbar {
     isLoggedIn: boolean = false;
     userID : any = null;
     isAdmin: boolean = false;
+    isLoggingOut: boolean = false; // Add loading state for logout
     
     constructor(private router: Router, private auth: AuthService) {
         this.userID = auth.userID;
         this.isLoggedIn = auth.isLoggedIn();
         this.isAdmin = auth.isAdmin();
-    }
-
-    logout() {
+    }    logout() {
+        this.isLoggingOut = true;
         this.auth.logout();
-        window.location.reload();
+        // Small delay to show the loading state before reload
+        setTimeout(() => {
+            window.location.reload();
+        }, 300);
     }
 }
