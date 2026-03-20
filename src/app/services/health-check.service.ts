@@ -12,6 +12,7 @@ const SERVICES = [
 
 const THROTTLE_KEY = 'mba_health_last_check'; // localStorage key for last check timestamp
 const THROTTLE_MINUTES = 25; // Only run health check if 25+ minutes have passed
+const BANNER_VISIBLE_KEY = 'mba_health_banner_visible'; // localStorage key for banner visibility
 
 interface ServiceStatus {
     url: string;
@@ -27,6 +28,7 @@ export class HealthCheckService {
     readonly serviceStatuses = signal<ServiceStatus[]>([]);
     readonly allServicesChecked = signal(false);
     readonly sleeping = signal(this.getSleepingFromStorage()); // For button disabling compatibility
+    readonly bannerVisible = signal(this.getBannerVisibilityFromStorage()); // Persist banner visibility
 
     constructor(private http: HttpClient) {
         // Initialize service statuses
@@ -41,11 +43,27 @@ export class HealthCheckService {
     private getSleepingFromStorage(): boolean {
         const raw = localStorage.getItem('mba_health_sleeping');
         return raw === 'true';
-    }    /**
+    }    
+    /**
      * Persists the sleeping state to localStorage
      */
     private setSleepingToStorage(value: boolean): void {
         localStorage.setItem('mba_health_sleeping', value ? 'true' : 'false');
+    }
+
+    /**
+     * Reads the banner visibility state from localStorage
+     */
+    private getBannerVisibilityFromStorage(): boolean {
+        const raw = localStorage.getItem(BANNER_VISIBLE_KEY);
+        return raw === 'true';
+    }
+
+    /**
+     * Persists the banner visibility state to localStorage
+     */
+    private setBannerVisibilityToStorage(value: boolean): void {
+        localStorage.setItem(BANNER_VISIBLE_KEY, value ? 'true' : 'false');
     }
 
     /**
@@ -108,7 +126,9 @@ export class HealthCheckService {
         this.allServicesChecked.set(false);
         this.sleeping.set(true); // Disable buttons immediately when checking starts
         this.setSleepingToStorage(true);
-        
+        this.bannerVisible.set(true); // Show banner when checking starts
+        this.setBannerVisibilityToStorage(true);
+
         // Reset all services to loading state
         this.serviceStatuses.set(
             SERVICES.map(url => ({ url, status: 'loading' as const }))
@@ -120,61 +140,65 @@ export class HealthCheckService {
                     // Update individual service status on success
                     this.serviceStatuses.update(statuses => {
                         const updated = [...statuses];
-                        updated[index] = { 
-                            url, 
-                            status: 'success', 
+                        updated[index] = {
+                            url,
+                            status: 'success',
                             httpStatus: response.status,
-                            response: response.body 
+                            response: response.body
                         };
                         return updated;
                     });
-                }),                catchError(error => {
+                }), catchError(error => {
                     // Update individual service status on error
                     const httpStatus = error.status || 0;
                     this.serviceStatuses.update(statuses => {
                         const updated = [...statuses];
                         // Only 503 is considered "unavailable", all others are "success"
                         const statusType = httpStatus === 503 ? 'unavailable' : 'success';
-                        updated[index] = { 
-                            url, 
-                            status: statusType, 
+                        updated[index] = {
+                            url,
+                            status: statusType,
                             httpStatus,
-                            error 
+                            error
                         };
                         return updated;
                     });
                     return of(null); // Continue with other requests
                 })
             )
-        );        forkJoin(requests).subscribe({
+        ); forkJoin(requests).subscribe({
             next: () => {
                 // All requests completed - check if any service is returning 503
-                const hasServiceUnavailable = this.serviceStatuses().some(s => 
+                const hasServiceUnavailable = this.serviceStatuses().some(s =>
                     s.status === 'unavailable'
                 );
-                
                 // Enable buttons only if NO service is returning 503
                 // Any other status (200, 500, 401, etc.) is considered "up"
                 this.sleeping.set(hasServiceUnavailable);
                 this.setSleepingToStorage(hasServiceUnavailable);
-                
+
+                // Hide banner if all services are up, show if any are down
+                this.bannerVisible.set(hasServiceUnavailable);
+                this.setBannerVisibilityToStorage(hasServiceUnavailable);
+
                 this.isLoading.set(false);
                 this.allServicesChecked.set(true);
-                
+
                 console.log('Health check completed:', {
                     hasServiceUnavailable,
                     buttonsDisabled: hasServiceUnavailable,
-                    statuses: this.serviceStatuses().map(s => ({ 
-                        url: s.url, 
+                    statuses: this.serviceStatuses().map(s => ({
+                        url: s.url,
                         status: s.status,
-                        httpStatus: s.httpStatus 
+                        httpStatus: s.httpStatus
                     }))
                 });
-            },
-            error: () => {
+            }, error: () => {
                 // This shouldn't happen since we handle errors individually
                 this.sleeping.set(true); // Keep buttons disabled on unexpected error
                 this.setSleepingToStorage(true);
+                this.bannerVisible.set(true); // Keep banner visible on error
+                this.setBannerVisibilityToStorage(true);
                 this.isLoading.set(false);
                 this.allServicesChecked.set(true);
             }

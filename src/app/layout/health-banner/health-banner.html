@@ -1,5 +1,5 @@
-<!-- Health Check Banner - Only show when loading or when services are unavailable -->
-@if (healthCheck.isLoading() || healthCheck.sleeping()) {
+<!-- Health Check Banner - Show when loading OR when bannerVisible is true (persisted) -->
+@if (healthCheck.isLoading() || healthCheck.bannerVisible()) {
   <div class="health-banner">
     @if (healthCheck.isLoading()) {
       <!-- Loading State -->
@@ -10,7 +10,7 @@
       </div>
     }
 
-    @if (healthCheck.allServicesChecked() && healthCheck.sleeping()) {
+    @if (healthCheck.allServicesChecked() && healthCheck.bannerVisible()) {
       <!-- Only show results if there are unavailable services -->
       <div class="results-section">
         <div class="summary">

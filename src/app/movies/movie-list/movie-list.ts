@@ -5,7 +5,7 @@ import { MovieStatus } from '../enums/MovieStatus.enum';
 import { MovieService } from '../../services/movie.service';
 import { CommonModule } from '@angular/common';
 import { Observable, of } from 'rxjs';
-import { catchError } from 'rxjs';
+import { catchError, finalize } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { HealthCheckService } from '../../services/health-check.service';
@@ -20,9 +20,10 @@ export class MovieList implements OnInit {
     searchMovieName: string = '';
     searchTheatreName: string = '';
     searchForm!: FormGroup;
+    isSearching: boolean = false; // Add loading state for search
 
     // public so template can call healthCheck.sleeping()
-    constructor(private movieService: MovieService, private authService: AuthService, private formBuilder: FormBuilder, public healthCheck: HealthCheckService) {}
+    constructor(private movieService: MovieService, private authService: AuthService, private formBuilder: FormBuilder, public healthCheck: HealthCheckService) { }
 
     movieses: Movie[] = [
         {
@@ -171,19 +172,25 @@ export class MovieList implements OnInit {
                 return of([]);   // emit empty array so the template doesn't hang
             })
         );
-    }
-
-    onInput(): void {
+    } onInput(): void {
         this.moviesError = null;
+        this.isSearching = true; // Start loading
         this.movies$ = this.movieService.searchMovies(this.searchMovieName, this.searchTheatreName).pipe(
             catchError((error) => {
                 console.error('Error fetching movies:', error);
+                this.isSearching = false; // Stop loading on error
                 if (error.status === 502 || error.status === 503) {
                     this.moviesError = 'Services are waking up. Please try again in a moment.';
+                } else if (error.status === 404) {
+                    // 404 is not an error - it means no movies found, which is a valid response
+                    this.moviesError = null; // Don't show error message for no results
                 } else {
                     this.moviesError = 'Search failed. Please try again.';
                 }
                 return of([]);
+            }),
+            finalize(() => {
+                this.isSearching = false; // Stop loading when complete
             })
         );
     }
