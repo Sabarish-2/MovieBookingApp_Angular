@@ -43,7 +43,7 @@ export class HealthCheckService {
     private getSleepingFromStorage(): boolean {
         const raw = localStorage.getItem('mba_health_sleeping');
         return raw === 'true';
-    }    
+    }
     /**
      * Persists the sleeping state to localStorage
      */
@@ -89,7 +89,7 @@ export class HealthCheckService {
         // Check if 25+ minutes have elapsed
         const elapsedMinutes = (currentTime - lastCheckTime) / (1000 * 60);
         const shouldRun = elapsedMinutes >= THROTTLE_MINUTES;
-        
+
         console.log(`Health check throttle check:`, {
             lastCheck: new Date(lastCheckTime).toLocaleString(),
             elapsedMinutes: Math.round(elapsedMinutes * 100) / 100,
@@ -106,7 +106,9 @@ export class HealthCheckService {
         const timestamp = new Date().toISOString();
         localStorage.setItem(THROTTLE_KEY, timestamp);
         console.log('Health check timestamp saved:', timestamp);
-    }/**
+    }
+
+    /**
      * Triggers HTTP requests to all 5 URLs and shows loading state
      * Disables all buttons during check and when any service returns 503
      * 
@@ -119,8 +121,7 @@ export class HealthCheckService {
             return;
         }
 
-        // Save current timestamp as last check time
-        this.saveLastCheckTime();
+        // Note: Timestamp will be saved only if all services return non-503 responses
 
         this.isLoading.set(true);
         this.allServicesChecked.set(false);
@@ -172,6 +173,15 @@ export class HealthCheckService {
                 const hasServiceUnavailable = this.serviceStatuses().some(s =>
                     s.status === 'unavailable'
                 );
+
+                // Only save timestamp if NO services are unavailable (all non-503 responses)
+                if (!hasServiceUnavailable) {
+                    this.saveLastCheckTime();
+                    console.log('Health check successful - timestamp saved');
+                } else {
+                    console.log('Health check completed with some services unavailable - timestamp NOT saved');
+                }
+
                 // Enable buttons only if NO service is returning 503
                 // Any other status (200, 500, 401, etc.) is considered "up"
                 this.sleeping.set(hasServiceUnavailable);
@@ -187,6 +197,7 @@ export class HealthCheckService {
                 console.log('Health check completed:', {
                     hasServiceUnavailable,
                     buttonsDisabled: hasServiceUnavailable,
+                    timestampSaved: !hasServiceUnavailable,
                     statuses: this.serviceStatuses().map(s => ({
                         url: s.url,
                         status: s.status,
@@ -195,6 +206,8 @@ export class HealthCheckService {
                 });
             }, error: () => {
                 // This shouldn't happen since we handle errors individually
+                // Don't save timestamp on unexpected error
+                console.log('Health check failed with unexpected error - timestamp NOT saved');
                 this.sleeping.set(true); // Keep buttons disabled on unexpected error
                 this.setSleepingToStorage(true);
                 this.bannerVisible.set(true); // Keep banner visible on error
