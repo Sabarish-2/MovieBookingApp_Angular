@@ -46,7 +46,7 @@
         <input type="password" class="form-control" formControlName="confirmNewPassword"
             placeholder="Confirm new password" />
         @if ((f['confirmNewPassword'].touched || submitted) && forgotForm.errors?.['newPasswordMismatch']) {
-        <div class="text-danger small mt-1">Passwords do not match.</div>
+            <div class="text-danger small mt-1">Passwords do not match.</div>
         }
     </div>
     }    <div class="d-flex gap-2 align-items-center mb-2">
@@ -72,4 +72,13 @@
         <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
     }
 
+    @if (stage === 'lookup') {
+        <div class="text-center mt-3">
+            <span>Remember your account password? </span><a routerLink="/login" class="text-decoration-none">Login</a>
+        </div>
+
+        <div class="text-center mt-2">
+            <span>Don't have an account? </span><a routerLink="/register" class="text-decoration-none">Register</a>
+        </div>
+    }   
 </form>

@@ -1,7 +1,7 @@
 import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors, FormGroup } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { Observable, take } from 'rxjs';
 import { HealthCheckService } from '../../services/health-check.service';
@@ -41,7 +41,7 @@ function confirmMatch(group: AbstractControl): ValidationErrors | null {
 @Component({
     standalone: true,
     selector: 'app-forgot',
-    imports: [CommonModule, ReactiveFormsModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterLink],
     templateUrl: './forgot.html',
     styleUrl: './forgot.sass',
 })

@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { NewUser } from '../model/NewUser.model';
 import { HealthCheckService } from '../../services/health-check.service';
@@ -39,7 +39,7 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
 @Component({
     standalone: true,
     selector: 'app-register',
-    imports: [CommonModule, ReactiveFormsModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterLink],
     templateUrl: './register.html',
     styleUrl: './register.sass',
 })
