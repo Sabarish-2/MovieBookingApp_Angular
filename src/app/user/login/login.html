@@ -29,8 +29,8 @@
               - isLoading: request is in-flight
               - healthCheck.sleeping(): interceptor detected a sleeping service (502/503)
         -->
-        <button class="btn btn-primary" type="submit" [disabled]="isLoading || healthCheck.sleeping()">
-            @if (isLoading) {
+        <button class="btn btn-primary" type="submit" [disabled]="this.loginForm.invalid || isLoading() || healthCheck.sleeping()">
+            @if (isLoading()) {
                 <!-- Bootstrap spinner shown while request is in-flight -->
                 <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                 Logging in...

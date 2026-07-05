@@ -1,9 +1,9 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors, FormGroup } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { UserService } from '../../services/user.service';
-import { Observable, take } from 'rxjs';
+import { take } from 'rxjs';
 import { HealthCheckService } from '../../services/health-check.service';
 
 function passwordStrength(control: AbstractControl): ValidationErrors | null {
@@ -12,10 +12,10 @@ function passwordStrength(control: AbstractControl): ValidationErrors | null {
 
     const checks = [
         { regex: /.{8,}/, message: 'Password must be at least 8 characters long.' },
-        { regex: /[0-9]/, message: 'Password must include at least one number.' },
+        { regex: /\d/, message: 'Password must include at least one number.' },
         { regex: /[a-z]/, message: 'Password must include at least one lowercase letter.' },
         { regex: /[A-Z]/, message: 'Password must include at least one uppercase letter.' },
-        { regex: /[^A-Za-z0-9]/, message: 'Password must include at least one special character.' },
+        { regex: /[^A-Za-z\d]/, message: 'Password must include at least one special character.' },
     ];
 
     const errors = checks.reduce((acc, check) => {
@@ -49,11 +49,11 @@ export class Forgot {
     forgotForm: FormGroup;
     submitted = false;
     stage: 'lookup' | 'reset' = 'lookup';
-    isLoading = false;
+    isLoading = signal(false);
     errorMessage = '';
     successMessage = '';
 
-    constructor(private fb: FormBuilder, private userService: UserService, private router: Router, private cdr: ChangeDetectorRef, public healthCheck: HealthCheckService) {
+    constructor(private fb: FormBuilder, private userService: UserService, private router: Router, public healthCheck: HealthCheckService) {
         this.forgotForm = this.fb.group({});
 
         this.forgotForm = this.fb.group(
@@ -94,17 +94,17 @@ export class Forgot {
                 return;
             }
 
-            this.isLoading = true;
+            this.isLoading.set(true);
             this.userService.userForgot(userControl.value).pipe(take(1)).subscribe({
                 next: () => {
-                    this.isLoading = false;
+                    this.isLoading.set(false);
                     this.stage = 'reset';
                     this.enableResetControls();
                     this.successMessage = 'Verification successful. You can now set a new password.';
                 },
                 error: (error) => {
                     console.error('User lookup failed:', error);
-                    this.isLoading = false;
+                    this.isLoading.set(false);
                     this.errorMessage = error?.error?.message || 'Unable to verify user. Please check the ID and try again.';
                 },
             });
@@ -119,11 +119,11 @@ export class Forgot {
                 return;
             }
 
-            this.isLoading = true;
+            this.isLoading.set(true);
             this.userService.userLogin({ loginID: userId, password: newPassword })
                 .subscribe({
                     next: () => {
-                        this.isLoading = false;
+                        this.isLoading.set(false);
                         this.errorMessage = 'New password cannot be the same as the old password.';
                         return;
                     },
@@ -131,7 +131,7 @@ export class Forgot {
 
                         this.userService.userForgotCheck(userId, newPassword).subscribe({
                             next: () => {
-                                this.isLoading = false;
+                                this.isLoading.set(false);
                                 this.stage = 'lookup';
                                 this.disableResetControls();
                                 this.forgotForm.reset();
@@ -141,7 +141,7 @@ export class Forgot {
                             },
                             error: (error) => {
                                 console.error('Password reset check failed:', error);
-                                this.isLoading = false;
+                                this.isLoading.set(false);
                                 this.errorMessage = error?.error?.message || 'Unable to reset password. Please try again.';
                             },
                         });

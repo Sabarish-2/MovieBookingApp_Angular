@@ -1,4 +1,4 @@
-<form [formGroup]="forgotForm" (ngSubmit)="submit()" novalidate class="forgot-form shadow-sm p-4 bg-light rounded">
+<form [formGroup]="forgotForm" (ngSubmit)="submit()" novalidate class="forgot-form shadow-sm mt-5 p-4 bg-light rounded">
     @if (successMessage) {
     <div class="alert alert-success" role="alert">{{ successMessage }}</div>
     }
@@ -51,10 +51,10 @@
     </div>
     }    <div class="d-flex gap-2 align-items-center mb-2">
         <!--
-            Disabled when: request in-flight (isLoading) OR a service is sleeping (healthCheck.sleeping())
+            Disabled when: request in-flight (isLoading()) OR a service is sleeping (healthCheck.sleeping())
         -->
-        <button class="btn btn-primary w-100" type="submit" [disabled]="isLoading || healthCheck.sleeping()">
-            @if (isLoading) {
+        <button class="btn btn-primary w-100" type="submit" [disabled]="isLoading() || healthCheck.sleeping()">
+            @if (isLoading()) {
                 <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
             }
             {{ stage === 'lookup' ? 'Verify User' : 'Update Password' }}

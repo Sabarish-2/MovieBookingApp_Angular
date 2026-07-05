@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -14,7 +14,7 @@ function passwordStrength(control: AbstractControl): ValidationErrors | null {
     if (!/.{8,}/.test(pw)) {
         errors['minLength'] = true;
     }
-    if (!/[0-9]/.test(pw)) {
+    if (!/\d/.test(pw)) {
         errors['missingNumber'] = true;
     }
     if (!/[a-z]/.test(pw)) {
@@ -23,7 +23,7 @@ function passwordStrength(control: AbstractControl): ValidationErrors | null {
     if (!/[A-Z]/.test(pw)) {
         errors['missingUppercase'] = true;
     }
-    if (!/[^A-Za-z0-9]/.test(pw)) {
+    if (!/[^A-Za-z\d]/.test(pw)) {
         errors['missingSpecialChar'] = true;
     }
 
@@ -47,7 +47,7 @@ export class Register {    registerForm;
     message: string | null = null;
     messageIsError = false;   // true → red alert, false → green alert
     submitted = false;
-    isLoading = false;         // true while HTTP register call is in-flight
+    isLoading = signal(false);         // true while HTTP register call is in-flight
 
     // public so template can read healthCheck.sleeping() signal
     constructor(private fb: FormBuilder, private userService: UserService, private router: Router, public healthCheck: HealthCheckService) {
@@ -72,18 +72,18 @@ export class Register {    registerForm;
         this.submitted = true;
         if (this.registerForm.invalid) return;
 
-        this.isLoading = true;    // start spinner
+        this.isLoading.set(true);    // start spinner
         this.message = null;
 
         this.userService.userRegister(this.registerForm.value as NewUser).subscribe({
             next: _ => {
-                this.isLoading = false;
+                this.isLoading.set(false);
                 this.messageIsError = false;
                 this.message = 'Registration successful! Redirecting to login…';
                 this.router.navigate(['/login']);
             },
             error: err => {
-                this.isLoading = false;
+                this.isLoading.set(false);
                 this.messageIsError = true;
                 if (err.status === 409) {
                     this.message = 'Login ID or email already exists. Please choose another.';

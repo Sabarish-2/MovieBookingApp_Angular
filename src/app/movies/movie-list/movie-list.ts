@@ -1,11 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal, WritableSignal } from '@angular/core';
 import { MovieCard } from '../movie-card/movie-card';
 import { Movie } from '../model/Movie.model';
 import { MovieStatus } from '../enums/MovieStatus.enum';
 import { MovieService } from '../../services/movie.service';
 import { CommonModule } from '@angular/common';
-import { Observable, of } from 'rxjs';
-import { catchError, finalize } from 'rxjs';
+import { Observable, of, catchError, finalize, distinctUntilChanged, switchMap, debounceTime } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { HealthCheckService } from '../../services/health-check.service';
@@ -20,7 +19,7 @@ export class MovieList implements OnInit {
     searchMovieName: string = '';
     searchTheatreName: string = '';
     searchForm!: FormGroup;
-    isSearching: boolean = false; // Add loading state for search
+    isSearching: WritableSignal<boolean> = signal(false); // Add loading state for search
 
     // public so template can call healthCheck.sleeping()
     constructor(private movieService: MovieService, private authService: AuthService, private formBuilder: FormBuilder, public healthCheck: HealthCheckService) { }
@@ -92,7 +91,7 @@ export class MovieList implements OnInit {
     ];
 
     isAdmin: boolean = false;
-    isAddingMovie = false;      // true while addMovie HTTP call is in-flight
+    isAddingMovie = signal(false);      // true while addMovie HTTP call is in-flight
     addMovieError: string | null = null;   // inline error under Add Movie form
     addMovieSuccess: string | null = null; // inline success message
 
@@ -104,7 +103,7 @@ export class MovieList implements OnInit {
     addMovie() {
         this.addMovieError = null;
         this.addMovieSuccess = null;
-        this.isAddingMovie = true;   // start spinner on Add Movie button
+        this.isAddingMovie.set(true);   // start spinner on Add Movie button
 
         this.movieService.addMovie({
             movieName: this.addMovieForm.get('addMovieMovieName')?.value,
@@ -114,14 +113,16 @@ export class MovieList implements OnInit {
             movieStatus: MovieStatus.AVAILABLE,
         }).subscribe({
             next: () => {
-                this.isAddingMovie = false;
+                this.isAddingMovie.set(false);
                 this.addMovieSuccess = 'Movie added successfully!';
                 this.onInput();   // refresh list
             },
             error: (err) => {
-                this.isAddingMovie = false;
+                this.isAddingMovie.set(false);
                 if (err.status === 502 || err.status === 503) {
                     this.addMovieError = 'Service is waking up, please try again in a moment.';
+                } else if (err.status === 400) {
+                    this.addMovieError = 'Movie Name and Theatre Name are Required. Tickets cannot be 0.';
                 } else {
                     this.addMovieError = err?.error?.message || 'Failed to add movie. Please try again.';
                 }
@@ -146,12 +147,12 @@ export class MovieList implements OnInit {
 
         this.loadMovies();
 
-        this.searchForm.get('searchMovieName')?.valueChanges.subscribe((value) => {
-            this.searchMovieName = value;
-            this.onInput();
-        });
-        this.searchForm.get('searchTheatreName')?.valueChanges.subscribe((value) => {
-            this.searchTheatreName = value;
+        this.searchForm.valueChanges.pipe(
+            debounceTime(300),
+            distinctUntilChanged()
+        ).subscribe((value) => {
+            this.searchMovieName = value['searchMovieName'];
+            this.searchTheatreName = value['searchTheatreName'];
             this.onInput();
         });
         this.isAdmin = this.authService.isAdmin();
@@ -166,32 +167,41 @@ export class MovieList implements OnInit {
                 // 502/503 → sleeping; interceptor already set the signal, just show a message
                 if (error.status === 502 || error.status === 503) {
                     this.moviesError = 'Services are waking up. Movies will load automatically once ready.';
+                } else if (error.status === 404) {
+                    this.moviesError = 'No Movies Available, Server Crash?';
                 } else {
                     this.moviesError = 'Could not load movies. Please refresh.';
                 }
                 return of([]);   // emit empty array so the template doesn't hang
             })
         );
-    } onInput(): void {
+    }
+
+    onInput(): void {
         this.moviesError = null;
-        this.isSearching = true; // Start loading
-        this.movies$ = this.movieService.searchMovies(this.searchMovieName, this.searchTheatreName).pipe(
+        this.isSearching.set(true); // Start loading
+        this.movieService.searchMovies(this.searchMovieName, this.searchTheatreName).pipe(
             catchError((error) => {
                 console.error('Error fetching movies:', error);
-                this.isSearching = false; // Stop loading on error
+                this.isSearching.set(false); // Stop loading on error
                 if (error.status === 502 || error.status === 503) {
                     this.moviesError = 'Services are waking up. Please try again in a moment.';
                 } else if (error.status === 404) {
-                    // 404 is not an error - it means no movies found, which is a valid response
-                    this.moviesError = null; // Don't show error message for no results
+                    this.moviesError = 'No Movies Found. Please refine your search';
                 } else {
                     this.moviesError = 'Search failed. Please try again.';
                 }
                 return of([]);
             }),
             finalize(() => {
-                this.isSearching = false; // Stop loading when complete
+                this.isSearching.set(false); // Stop loading when complete
             })
-        );
+        ).subscribe((movies) => {
+            if (typeof movies === "object") {
+                this.movies$ = of(movies);
+            } else {
+                this.movies$ = new Observable<Movie[]>;
+            }
+        });
     }
 }

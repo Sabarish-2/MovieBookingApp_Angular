@@ -27,9 +27,9 @@
                         <!--
                                 Disabled when: add in-flight OR services sleeping
                             -->
-                        <button class="btn btn-success w-100" [disabled]="isAddingMovie || healthCheck.sleeping()"
+                        <button class="btn btn-success w-100" [disabled]="isAddingMovie() || healthCheck.sleeping()"
                             (click)="addMovie()">
-                            @if (isAddingMovie) {
+                            @if (isAddingMovie()) {
                             <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                             Adding...
                             } @else {
@@ -69,9 +69,9 @@
                             formControlName='searchTheatreName'>
                     </div>
                     <div class="col-md-2 d-flex align-items-end mb-2">
-                        <button class="btn btn-primary w-100" [disabled]="isSearching || healthCheck.sleeping()"
+                        <button class="btn btn-primary w-100" [disabled]="isSearching() || healthCheck.sleeping()"
                             (click)="onInput()">
-                            @if (isSearching) {
+                            @if (isSearching()) {
                             <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                             Searching...
                             } @else {
@@ -92,9 +92,6 @@
     @if (movies$ | async; as movieList) {
     @for (movie of movieList; track movie.movieName + "|" + movie.theatreName) {
     <app-movie-card [movie]="movie" [isAdmin]="isAdmin"></app-movie-card>
-    }
-    @if (movieList.length === 0 && !moviesError) {
-    <div class="text-center text-muted mt-4">No Movies Found!</div>
     }
     }
 </div>

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -18,7 +18,7 @@ export class Login {
 
     loginForm;
     submitted = false;
-    isLoading = false;    // true while HTTP login call is in-flight → disables button + shows spinner
+    isLoading = signal(false);    // true while HTTP login call is in-flight → disables button + shows spinner
     error: string | null = null;
     user: User | null = null;
 
@@ -34,10 +34,10 @@ export class Login {
 
     submit() {
         this.submitted = true;
-        this.error = null;
+        this.error = '';
         if (this.loginForm.invalid) return;
-
-        this.isLoading = true;   // start spinner
+        
+        this.isLoading.set(true);   // start spinner
         const loginUser: LoginUser = {
             loginID: this.loginForm.value.loginID || '',
             password: this.loginForm.value.password || ''
@@ -47,13 +47,13 @@ export class Login {
             next: token => {
                 // isLoading stays true briefly — page reloads anyway
                 localStorage.setItem('token', token.toString());
-                window.location.reload();
+                globalThis.location.reload();
             },
             error: err => {
-                this.isLoading = false;  // stop spinner on error
+                this.isLoading.set(false);  // stop spinner on error
                 // 401 = wrong credentials; 502/503 = service sleeping (interceptor also handles this)
                 if (err.status === 401) {
-                    this.error = 'Invalid login ID or password.';
+                    this.error = 'Invalid ID or Password.';
                 } else if (err.status === 502 || err.status === 503) {
                     this.error = 'Service is waking up, please try again in a moment.';
                 } else {

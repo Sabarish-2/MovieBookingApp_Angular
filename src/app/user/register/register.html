@@ -77,14 +77,14 @@
         <label class="form-label">Contact Number</label>
         <input class="form-control" formControlName="contactNumber" placeholder="Enter your contact number" />
         @if ((f.contactNumber.touched || submitted) && f.contactNumber.invalid) {
-        <div class="text-danger small mt-1">Enter a valid 10-digit number.</div>
+        <div class="text-danger small mt-1">Enter a valid 10-digit number. (Please do not include country codes like +91)</div>
         }
     </div>    <div class="d-grid">
         <!--
             Disabled when request is in-flight OR a sleeping service was detected
         -->
-        <button class="btn btn-primary" type="submit" [disabled]="isLoading || healthCheck.sleeping()">
-            @if (isLoading) {
+        <button class="btn btn-primary" type="submit" [disabled]="this.registerForm.invalid || isLoading() || healthCheck.sleeping()">
+            @if (isLoading()) {
                 <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                 Registering...
             } @else {
