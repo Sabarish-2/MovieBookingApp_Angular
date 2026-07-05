@@ -4,7 +4,7 @@ import { Movie } from '../model/Movie.model';
 import { MovieStatus } from '../enums/MovieStatus.enum';
 import { MovieService } from '../../services/movie.service';
 import { CommonModule } from '@angular/common';
-import { Observable, of, catchError, finalize, distinctUntilChanged, switchMap, debounceTime } from 'rxjs';
+import { Observable, of, catchError, distinctUntilChanged, switchMap, debounceTime } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { HealthCheckService } from '../../services/health-check.service';
@@ -22,7 +22,7 @@ export class MovieList implements OnInit {
     isSearching: WritableSignal<boolean> = signal(false); // Add loading state for search
 
     // public so template can call healthCheck.sleeping()
-    constructor(private movieService: MovieService, private authService: AuthService, private formBuilder: FormBuilder, public healthCheck: HealthCheckService) { }
+    constructor(private readonly movieService: MovieService, private readonly authService: AuthService, private readonly formBuilder: FormBuilder, public healthCheck: HealthCheckService) { }
 
     movieses: Movie[] = [
         {
@@ -115,7 +115,7 @@ export class MovieList implements OnInit {
             next: () => {
                 this.isAddingMovie.set(false);
                 this.addMovieSuccess = 'Movie added successfully!';
-                this.onInput();   // refresh list
+                this.loadMovies();   // refresh list
             },
             error: (err) => {
                 this.isAddingMovie.set(false);
@@ -149,19 +149,51 @@ export class MovieList implements OnInit {
 
         this.searchForm.valueChanges.pipe(
             debounceTime(300),
-            distinctUntilChanged()
-        ).subscribe((value) => {
-            this.searchMovieName = value['searchMovieName'];
-            this.searchTheatreName = value['searchTheatreName'];
-            this.onInput();
-        });
+            distinctUntilChanged(),
+            switchMap((value) => {
+                this.searchMovieName = value['searchMovieName'];
+                this.searchTheatreName = value['searchTheatreName'];
+                return this.prepareSearch()
+            }))
+            .subscribe(((movies) => {
+                this.movies$ = of(movies);
+                this.isSearching.set(false); // Stop loading when complete
+            }));
         this.isAdmin = this.authService.isAdmin();
     }
 
-    // Extracted so it can be called from both ngOnInit and search
+    private prepareSearch(): Observable<Movie[]> {
+        this.moviesError = null;
+        this.isSearching.set(true); // Start loading
+        return this.movieService.searchMovies(this.searchMovieName, this.searchTheatreName)
+            .pipe(
+                catchError((error) => {
+                    console.error('Error fetching movies:', error);
+                    this.isSearching.set(false); // Stop loading on error
+                    if (error.status === 502 || error.status === 503) {
+                        this.moviesError = 'Services are waking up. Please try again in a moment.';
+                    } else if (error.status === 404) {
+                        this.moviesError = 'No Movies Found. Please refine your search';
+                    } else {
+                        this.moviesError = 'Search failed. Please try again.';
+                    }
+                    return of([]);
+                })
+            )
+    }
+
+    search(): void {
+        this.searchMovieName = this.searchForm.value.searchMovieName;
+        this.searchTheatreName = this.searchForm.value.searchTheatreName;
+        this.prepareSearch().subscribe(((movies) => {
+            this.movies$ = of(movies);
+            this.isSearching.set(false); // Stop loading when complete
+        }));
+    }
+
     private loadMovies(): void {
         this.moviesError = null;
-        this.movies$ = this.movieService.getAllMovies().pipe(
+        this.movieService.getAllMovies().pipe(
             catchError((error) => {
                 console.error('Error fetching movies:', error);
                 // 502/503 → sleeping; interceptor already set the signal, just show a message
@@ -174,34 +206,6 @@ export class MovieList implements OnInit {
                 }
                 return of([]);   // emit empty array so the template doesn't hang
             })
-        );
-    }
-
-    onInput(): void {
-        this.moviesError = null;
-        this.isSearching.set(true); // Start loading
-        this.movieService.searchMovies(this.searchMovieName, this.searchTheatreName).pipe(
-            catchError((error) => {
-                console.error('Error fetching movies:', error);
-                this.isSearching.set(false); // Stop loading on error
-                if (error.status === 502 || error.status === 503) {
-                    this.moviesError = 'Services are waking up. Please try again in a moment.';
-                } else if (error.status === 404) {
-                    this.moviesError = 'No Movies Found. Please refine your search';
-                } else {
-                    this.moviesError = 'Search failed. Please try again.';
-                }
-                return of([]);
-            }),
-            finalize(() => {
-                this.isSearching.set(false); // Stop loading when complete
-            })
-        ).subscribe((movies) => {
-            if (typeof movies === "object") {
-                this.movies$ = of(movies);
-            } else {
-                this.movies$ = new Observable<Movie[]>;
-            }
-        });
+        ).subscribe((movies) => this.movies$ = of(movies));
     }
 }

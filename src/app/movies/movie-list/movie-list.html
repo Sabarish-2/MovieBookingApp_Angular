@@ -54,7 +54,7 @@
     </form>
     }
 
-    <form class="search-form row w-100" [formGroup]="searchForm" (ngSubmit)="onInput()">
+    <form class="search-form row w-100" [formGroup]="searchForm" (ngSubmit)="search()">
         <div class="card mb-3">
             <div class="card-body">
                 <div class="row">
@@ -70,7 +70,7 @@
                     </div>
                     <div class="col-md-2 d-flex align-items-end mb-2">
                         <button class="btn btn-primary w-100" [disabled]="isSearching() || healthCheck.sleeping()"
-                            (click)="onInput()">
+                            (click)="search()">
                             @if (isSearching()) {
                             <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                             Searching...
