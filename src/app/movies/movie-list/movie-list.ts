@@ -182,7 +182,10 @@ export class MovieList implements OnInit {
     searchButton(): void {
         this.searchMovieName = this.searchForm.value.searchMovieName;
         this.searchTheatreName = this.searchForm.value.searchTheatreName;
-        this.movies$ = this.searchMovies()
+        this.searchForm.updateValueAndValidity({
+            emitEvent: true
+        });
+
     }
 
     private loadMovies(): Observable<Movie[]> {
